@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ABM Local AI</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>ABM Local AI</h1>
+      <span id="badge" class="badge">…</span>
+    </header>
+
+    <section>
+      <h2>Model</h2>
+      <p id="model" class="mono muted">No model selected</p>
+      <div class="row">
+        <input id="model-path" placeholder="Path to a .gguf file (or put one in the packs folder)" />
+        <button id="start">Start</button>
+        <button id="stop" class="secondary">Stop</button>
+      </div>
+      <p id="error" class="error" hidden></p>
+    </section>
+
+    <section>
+      <h2>Test prompt</h2>
+      <div class="row">
+        <input id="prompt" value="In two sentences, what is a duplicate invoice?" />
+        <button id="send">Send</button>
+      </div>
+      <pre id="answer" class="answer" hidden></pre>
+      <p id="timing" class="muted"></p>
+    </section>
+
+    <section>
+      <h2>This computer</h2>
+      <dl id="facts"></dl>
+      <p class="muted">Nothing leaves this computer. The model server listens on 127.0.0.1 only, with a random key that only the hub knows.</p>
+    </section>
+
+    <script src="main.js"></script>
+  </body>
+</html>

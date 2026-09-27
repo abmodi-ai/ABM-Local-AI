@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hub:
+    name: hub (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+          - name: macos
+            os: macos-latest # Apple Silicon
+          - name: linux
+            os: ubuntu-22.04 # oldest supported Ubuntu, so the glibc baseline is tested
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xvfb
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: hub
+
+      - name: Cache pinned downloads (llama.cpp build, CI model)
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: fetch-${{ runner.os }}-${{ hashFiles('runtime/llama.lock.json', 'bench/models.json') }}
+
+      - name: Fetch pinned llama.cpp and the CI model (sha256-verified)
+        run: |
+          python scripts/fetch_llama.py
+          python scripts/fetch_model.py ci-tiny
+          pip install psutil
+
+      - name: Unit tests
+        run: cargo test --manifest-path hub/Cargo.toml -p abm-hub-core
+
+      - name: Core smoke test (start, schema output, key, loopback, orphan, stop)
+        run: |
+          cargo build --manifest-path hub/Cargo.toml -p abm-hub-core --release --bin abm-hub-smoke
+          hub/target/release/abm-hub-smoke \
+            --llama-dir hub/app/resources/llama \
+            --model .cache/models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+
+      - name: Build installers
+        working-directory: hub/app
+        run: npx --yes @tauri-apps/cli@2 build
+
+      - name: Install and launch-check (Windows, NSIS per-user)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem hub/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          Start-Process -FilePath $installer.FullName -ArgumentList '/S' -Wait
+          $root = Join-Path $env:LOCALAPPDATA 'ABM Local AI'
+          Get-ChildItem -Recurse $root | Select-Object -ExpandProperty FullName
+          python scripts/app_launch_check.py --app (Join-Path $root 'abm-local-ai.exe') --root $root `
+            --model .cache/models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+
+      - name: Launch-check the app bundle (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          app="hub/target/release/bundle/macos/ABM Local AI.app"
+          ls -la "$app/Contents/Resources/llama"
+          python scripts/app_launch_check.py --app "$app/Contents/MacOS/abm-local-ai" --root "$app" \
+            --model .cache/models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+
+      - name: Install and launch-check (Linux, .deb) and check the AppImage contents
+        if: runner.os == 'Linux'
+        run: |
+          deb=$(ls hub/target/release/bundle/deb/*.deb | head -1)
+          sudo apt-get install -y "./$deb"
+          pkg=$(dpkg-deb -f "$deb" Package)
+          server=$(dpkg -L "$pkg" | grep '/llama/llama-server$')
+          app=$(dpkg -L "$pkg" | grep '^/usr/bin/' | head -1)
+          echo "app: $app  server: $server"
+          xvfb-run -a python scripts/app_launch_check.py --app "$app" --root "$(dirname "$(dirname "$server")")" \
+            --model .cache/models/SmolLM2-135M-Instruct-Q4_K_M.gguf
+          appimage=$(ls hub/target/release/bundle/appimage/*.AppImage | head -1)
+          chmod +x "$appimage"
+          (cd /tmp && "$OLDPWD/$appimage" --appimage-extract >/dev/null)
+          ls -la /tmp/squashfs-root/usr/lib/*/llama/llama-server
+          rpm=$(ls hub/target/release/bundle/rpm/*.rpm | head -1)
+          echo "rpm built: $rpm"
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.name }}
+          retention-days: 14
+          path: |
+            hub/target/release/bundle/nsis/*.exe
+            hub/target/release/bundle/msi/*.msi
+            hub/target/release/bundle/dmg/*.dmg
+            hub/target/release/bundle/appimage/*.AppImage
+            hub/target/release/bundle/deb/*.deb
+            hub/target/release/bundle/rpm/*.rpm
+
+  scripts:
+    name: python scripts (lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9" # oldest Python the fetch scripts support
+      - run: python -m py_compile scripts/*.py bench/bench.py

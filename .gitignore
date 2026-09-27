@@ -1,0 +1,20 @@
+# Build output
+target/
+hub/app/gen/
+
+# Fetched at build time (pinned + verified by scripts/fetch_llama.py / fetch_model.py)
+hub/app/resources/llama/
+.cache/
+*.gguf
+
+# Benchmark output that is machine-specific (commit the summarised table in docs/spike-results.md)
+bench/results/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db

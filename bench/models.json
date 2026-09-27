@@ -1,0 +1,29 @@
+{
+  "note": "Candidate model packs for the M0 spike, plus the tiny model used by CI smoke tests. Apache-2.0 or MIT only. sha256 values are the Hugging Face LFS object ids.",
+  "models": {
+    "small": {
+      "repo": "unsloth/Qwen3-1.7B-GGUF",
+      "file": "Qwen3-1.7B-Q4_K_M.gguf",
+      "size": 1107409472,
+      "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "license": "Apache-2.0",
+      "thinking": true
+    },
+    "standard": {
+      "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF",
+      "file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "size": 2497281120,
+      "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+      "license": "Apache-2.0",
+      "thinking": false
+    },
+    "ci-tiny": {
+      "repo": "bartowski/SmolLM2-135M-Instruct-GGUF",
+      "file": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "size": 105454432,
+      "sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+      "license": "Apache-2.0",
+      "thinking": false
+    }
+  }
+}
