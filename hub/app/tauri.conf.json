@@ -40,6 +40,8 @@
       "rpm"
     ],
     "publisher": "ABM",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2026 A.B. Modi",
     "category": "DeveloperTool",
     "shortDescription": "Private local AI for ABM apps",
     "icon": [

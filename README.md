@@ -63,3 +63,8 @@ python bench/bench.py small standard [--cpu-only --threads 4]
 ```
 
 On Windows PowerShell, set the variables with `$env:ABM_MODEL="..."` instead.
+
+## Licence
+
+Apache License 2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). The installers bundle llama.cpp
+(MIT). Model packs are separate downloads under their own licences (Apache-2.0 or MIT only in v1).

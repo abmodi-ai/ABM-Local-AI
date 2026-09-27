@@ -1,0 +1,14 @@
+ABM Local AI
+Copyright 2026 A.B. Modi
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party components distributed with the hub installers:
+
+- llama.cpp (https://github.com/ggml-org/llama.cpp), MIT License,
+  Copyright (c) 2023-2026 The ggml authors. Its licence text ships next to the
+  bundled binaries as llama/LICENSE. The pinned build is listed in
+  runtime/llama.lock.json.
+
+Model packs are separate downloads, each with its own licence recorded in its
+manifest. v1 accepts only Apache-2.0 or MIT models.
