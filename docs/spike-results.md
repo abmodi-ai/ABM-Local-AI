@@ -1,6 +1,6 @@
 # M0 spike results
 
-Status: **Mac done; Windows and Linux still to run.** Pinned llama.cpp: v0.5.0 (build b11146).
+Status: **packaging and process checks pass on all three OSes; speed and RAM on the Windows and Linux reference PCs are still to run.** Pinned llama.cpp: v0.5.0 (build b11146).
 Candidates: Small = Qwen3 1.7B Q4_K_M (1.03 GB), Standard = Qwen3 4B Instruct 2507 Q4_K_M (2.33 GB).
 Both are Apache-2.0.
 
@@ -9,14 +9,15 @@ Both are Apache-2.0.
 | Question | Windows | macOS | Linux |
 |---|---|---|---|
 | Pinned llama.cpp downloads, verifies and stages | ✅ staged (40 MB, 24 files) | ✅ staged (24 MB, 12 files) | ✅ staged (37 MB, 23 files) |
-| Core smoke test: start, schema JSON, key, loopback only, orphan kill, clean stop | CI | ✅ all 6 checks pass | CI |
-| Installer bundles llama.cpp and the installed app launches it | CI (NSIS `/S` install) | ✅ `.app` + 12 MB `.dmg` | CI (`.deb` install; AppImage + rpm built) |
-| llama-server dies when the hub is force-killed | CI (Job Object) | ✅ watchdog | CI (`PR_SET_PDEATHSIG`) |
+| Core smoke test: start, schema JSON, key, loopback only, orphan kill, clean stop | ✅ CI | ✅ local + CI | ✅ CI (Ubuntu 22.04) |
+| Installer bundles llama.cpp and the installed app launches it | ✅ CI: NSIS `/S` per-user install, app runs `AppData\Local\ABM Local AI\llama\llama-server.exe` | ✅ `.app` + 12 MB `.dmg` | ✅ CI: `.deb` installed, app runs `/usr/lib/ABM Local AI/llama/llama-server`; AppImage contains it; `.rpm` built |
+| llama-server dies when the hub is force-killed | ✅ CI (Job Object; core and installed app) | ✅ watchdog | ✅ CI (`PR_SET_PDEATHSIG`; core and installed app) |
 | Speed and RAM on an 8 GB, CPU-only reference PC | **to run** | proxy only (see below) | **to run** |
 | Tray icon on stock GNOME and KDE | n/a | n/a | **to check by hand** |
 
-"CI" means `.github/workflows/ci.yml` runs the check on that OS. It hasn't run yet: the repo
-has no GitHub remote.
+"CI" means `.github/workflows/ci.yml` runs the check on that OS. The first run passed
+everywhere on 2026-09-27 (run 36339578608). The installed app also serves only on loopback on
+all three OSes. Installers from each run are kept as build artifacts for 14 days.
 
 ## Findings that changed the plan
 
@@ -158,7 +159,6 @@ Two notes on these numbers:
    - `python bench/bench.py small standard --runs 5`
    - compare the **Peak private** column, not RSS
 2. **Linux reference machine** (Ubuntu 22.04, 8 GB): the same commands.
-3. **Push to GitHub** so CI runs the smoke, install and launch checks on all three OSes.
-4. **Check the Linux tray** by hand on stock GNOME (no AppIndicator extension) and on KDE.
-5. **Confirm or change** the Small/Standard defaults and the RAM tiers from
+3. **Check the Linux tray** by hand on stock GNOME (no AppIndicator extension) and on KDE.
+4. **Confirm or change** the Small/Standard defaults and the RAM tiers from
    steps 1–2. Then update the pack list in the brief (section 6.3).
