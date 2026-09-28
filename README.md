@@ -56,10 +56,6 @@ cargo run --manifest-path hub/Cargo.toml -p abm-hub-core --bin abm-hub-smoke -- 
 # Run the hub app (the model library; download and pick a model in the window)
 ABM_LLAMA_DIR=hub/app/resources/llama cargo run --manifest-path hub/Cargo.toml -p abm-local-ai
 
-# ...pretending to be a smaller computer, to see which models grey out and why
-ABM_SIMULATE_PC="ram=8,cores=4,gpu=0,disk=60" ABM_LLAMA_DIR=hub/app/resources/llama \
-  cargo run --manifest-path hub/Cargo.toml -p abm-local-ai
-
 # ...or skip the library and load a specific .gguf
 ABM_MODEL=.cache/models/SmolLM2-135M-Instruct-Q4_K_M.gguf \
   ABM_LLAMA_DIR=hub/app/resources/llama cargo run --manifest-path hub/Cargo.toml -p abm-local-ai

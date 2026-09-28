@@ -99,9 +99,7 @@ fn activate(hub: &Hub, id: &str) -> Result<(), String> {
 fn library(hub: tauri::State<'_, Hub>) -> Library {
     let hardware = {
         let mut hw = hub.hardware.lock().unwrap();
-        if std::env::var_os("ABM_SIMULATE_PC").is_none() {
-            hw.refresh_disk(&hub.data_dir);
-        }
+        hw.refresh_disk(&hub.data_dir);
         hw.clone()
     };
     let active = hub.settings.lock().unwrap().active.clone();
@@ -238,7 +236,7 @@ pub fn run() {
             let packs = Packs::new(&data_dir, Arc::clone(&catalog));
             let hub = Hub {
                 supervisor: Supervisor::new(),
-                hardware: Mutex::new(Hardware::detect(&data_dir).with_simulation()),
+                hardware: Mutex::new(Hardware::detect(&data_dir)),
                 settings: Mutex::new(Settings::load(&data_dir)),
                 running: Mutex::new(None),
                 llama_dir,
@@ -250,9 +248,14 @@ pub fn run() {
                 let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
                 hub.supervisor.start(LlamaConfig::new(&hub.llama_dir, &p));
                 *hub.running.lock().unwrap() = Some(Running { id: None, name, kind: "chat".into() });
-            } else if let Some(id) = hub.settings.lock().unwrap().active.clone() {
-                // Restart the model the user picked last time. A failure shows in the window.
-                let _ = activate_later(&hub, &id);
+            } else {
+                // Take the saved id in its own statement: in an `if let` the lock guard would
+                // live through the block and deadlock when activate() locks settings again.
+                let saved = hub.settings.lock().unwrap().active.clone();
+                if let Some(id) = saved {
+                    // Restart the model the user picked last time. A failure shows in the window.
+                    let _ = activate_later(&hub, &id);
+                }
             }
             app.manage(hub);
 

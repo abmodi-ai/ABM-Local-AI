@@ -52,23 +52,6 @@ impl Hardware {
         }
     }
 
-    /// Developer and demo aid: `ABM_SIMULATE_PC="ram=8,cores=4,gpu=0,disk=50"` pretends to be a
-    /// different computer, so the library can be checked without the hardware. Unknown keys are ignored.
-    pub fn with_simulation(mut self) -> Self {
-        let Ok(spec) = std::env::var("ABM_SIMULATE_PC") else { return self };
-        for (k, v) in spec.split(',').filter_map(|kv| kv.split_once('=')) {
-            match (k.trim(), v.trim()) {
-                ("ram", v) => self.total_ram_gb = v.parse().unwrap_or(self.total_ram_gb),
-                ("cores", v) => self.cpu_cores = v.parse().unwrap_or(self.cpu_cores),
-                ("disk", v) => self.free_disk_gb = v.parse().unwrap_or(self.free_disk_gb),
-                ("gpu", "0") => self.gpu = None,
-                _ => {}
-            }
-        }
-        self.cpu_name = format!("{} (simulated)", self.cpu_name);
-        self
-    }
-
     /// Refresh only the value that changes while the app runs.
     pub fn refresh_disk(&mut self, data_dir: &Path) {
         self.free_disk_gb = free_disk_gb(data_dir);
