@@ -5,7 +5,7 @@ every app that needs them, so apps don't each bundle their own. Nothing is sent 
 
 ```
   ABM Invoice Analytics ─┐                          ┌─ Model packs (separate downloads)
-  Future app #2 ─────────┼──► ABM Local AI (hub) ───┤   small · standard · embeddings
+  Future app #2 ─────────┼──► ABM Local AI (hub) ───┤   4B · larger · embeddings
   Future app #3 ─────────┘    this computer only    └─ added and removed in the hub
 ```
 
@@ -20,6 +20,8 @@ every app that needs them, so apps don't each bundle their own. Nothing is sent 
   shared harness library gives each app its domain checks. The model proposes; code decides.
 - **Standard interface.** It exposes an OpenAI-compatible API on the local machine, so tools you
   didn't write can use it too.
+
+**Minimum computer:** 12 GB RAM, 64-bit, no GPU needed.
 
 **Platforms:** Windows 10/11 (primary), macOS on Apple Silicon, and Linux (Ubuntu 22.04+,
 Debian 12+, Fedora 39+). One codebase builds a native installer for each: `.exe`/`.msi`, `.dmg`,
@@ -47,7 +49,7 @@ Requires Rust (stable), Python 3.9+, Node (only for `npx @tauri-apps/cli`) and, 
 
 ```sh
 python scripts/fetch_llama.py            # pinned llama.cpp for this OS -> hub/app/resources/llama/
-python scripts/fetch_model.py ci-tiny    # 105 MB test model (add: small standard)
+python scripts/fetch_model.py ci-tiny    # 105 MB test model (add: standard qwen3.5-4b granite-4.2-3b)
 
 # Headless smoke test: start, schema-valid JSON, API key, loopback-only, orphan kill, clean stop
 cargo run --manifest-path hub/Cargo.toml -p abm-hub-core --bin abm-hub-smoke -- \
@@ -64,7 +66,7 @@ ABM_MODEL=.cache/models/SmolLM2-135M-Instruct-Q4_K_M.gguf \
 cd hub/app && npx @tauri-apps/cli@2 build
 
 # Benchmark candidate packs (psutil gives peak RAM on Windows)
-python bench/bench.py small standard [--cpu-only --threads 4]
+python bench/bench.py standard qwen3.5-4b granite-4.2-3b [--cpu-only --threads 6]
 ```
 
 On Windows PowerShell, set the variables with `$env:ABM_MODEL="..."` instead.

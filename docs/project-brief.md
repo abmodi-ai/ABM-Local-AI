@@ -37,7 +37,8 @@ The hub ships without a model. Models are separate **model packs** the user inst
    trustworthy AI features quickly.
 5. Model packs are scored against each app's task suite, so an app only uses models that pass
    its bar.
-6. Runs on an ordinary 64-bit Windows 10/11 PC with about 8 GB of RAM and no GPU. macOS and
+6. Runs on an ordinary 64-bit Windows 10/11 PC with **at least 12 GB of RAM** and no GPU (minimum
+   raised from 8 GB on 2026-09-28; 4B-class models are the smallest offered). macOS and
    Linux (Ubuntu 22.04+, Debian 12+, Fedora 39+) are also supported from v1. Windows is the
    primary platform.
 
@@ -144,9 +145,12 @@ semantics in one place.
 - **Licences:** Apache-2.0 or MIT only in v1 (for example the Qwen3 family). Other licences can
   come later, behind an explicit warning.
 - **Suggested starting packs** (to be confirmed by evaluation):
-  - "Small": Qwen3 1.7B, Q4, about 1.1 GB. Runs on about 8 GB of RAM, CPU only.
-  - "Standard": Qwen3 4B, Q4, about 2.5 GB, hosted on Hugging Face.
-  - A small embeddings model.
+  - **Minimum: 12 GB RAM, 4B-class models.** Nothing below 12 GB is offered (decided
+    2026-09-28, after M0 showed 1.7B models state wrong facts confidently).
+  - Default: a 4B instruct model, Q4, about 2.5 GB (Qwen3 4B Instruct 2507 today; the next
+    candidates, Qwen3.5 4B and Granite 4.2 3B, are being benchmarked).
+  - A small embeddings model for retrieval.
+  - Larger packs for 16 GB+ and Apple Silicon machines.
 - **Adapters (later):** LoRA adapters per domain, loaded per request (llama.cpp supports LoRA). Build
   one only if base model plus retrieval misses an app's bar on its task suite.
 
@@ -208,7 +212,7 @@ Integration steps:
 2. **M1 – Hub core.** Supervisor, local API proxy, `endpoint.json`, approval, per-app keys, policy
    enforcement, JSON-schema output, and a no-disk-prompts test.
 3. **M2 – Packs.** Manifest format, verification, pack manager UI and catalog. Publish the
-   "Small" pack.
+   default 4B pack.
 4. **M3 – SDK and harness.** Python SDK (TypeScript after), prompt registry, output checks, tool
    loop, traces and the eval runner.
 5. **M4 – First client.** Invoice Analytics runs on the hub; its task suite gates which packs it
@@ -219,9 +223,9 @@ Integration steps:
 ## 10. Success criteria
 
 - A new ABM app gets approved and makes a schema-valid call in **≤ 20 lines** of SDK code.
-- Installing the hub plus the Small pack takes **< 5 minutes** on a typical PC, with no terminal.
-- On 8 GB of RAM with no GPU: the first token arrives in **≤ 3 s**, and a 200-token explanation
-  finishes in **≤ 20 s** on the Small pack.
+- Installing the hub plus the default 4B pack takes **< 5 minutes** on a typical PC, with no terminal.
+- On a 12 GB PC with no GPU: the first token arrives in **≤ 3 s** for a short (~400-token)
+  prompt, and a 200-token explanation finishes in **≤ 20 s** on the default 4B pack.
 - **Zero** prompts or outputs on disk, and **zero** non-local sockets (tested in CI).
 - Invoice Analytics explanations pass the grounding check **≥ 95%** of the time on the chosen
   default pack.

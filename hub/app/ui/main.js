@@ -175,6 +175,12 @@ async function refresh() {
     return;
   }
   renderPc(lib.hardware);
+  // Same 10% allowance as the Rust check: an "12 GB" computer can report 11.6 GB.
+  const below = lib.hardware.total_ram_gb < lib.min_ram_gb * 0.9;
+  $("below-min").hidden = !below;
+  if (below)
+    $("below-min").textContent = `ABM Local AI needs a computer with at least ${lib.min_ram_gb} GB of memory (RAM). ` +
+      `This computer has ${Math.round(lib.hardware.total_ram_gb)} GB, so none of the models below can run on it.`;
   renderStatus(lib);
   renderLibrary(lib);
 }

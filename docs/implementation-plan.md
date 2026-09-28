@@ -60,6 +60,10 @@ ABM-Local-AI/
 - Minimal Tauri 2 skeleton that launches the sidecar on all three OSes, to prove packaging of the llama.cpp folder (M0 found `externalBin` unsuitable: llama-server needs its shared libraries alongside it). On Linux, also check the tray on stock GNOME and KDE, and check that the AppImage runs on the oldest supported distro (glibc baseline).
 - **Exit:** a results table in `docs/spike-results.md`, and the Small/Standard defaults confirmed or changed.
 
+**Minimum raised to 12 GB RAM and 4B-class models (2026-09-28).** The reference PCs for the
+remaining benchmarks are 12 GB, CPU-only Windows and Linux machines; the 8 GB targets below are
+historical.
+
 **M0 status (2026-09-27):** repo scaffolded; the Mac spike is done; CI is written for all three OSes. Windows and Linux benchmark numbers are still needed on real 8 GB machines. See [spike-results.md](spike-results.md).
 
 ### M1 — Hub core
@@ -88,8 +92,8 @@ ABM-Local-AI/
   - downloads only from hosts the catalog lists.
 - Resumable download, with sha256 checked at install and again at load. Unverified files are refused.
 - Pack manager UI: install, remove, set default, RAM warnings.
-- Publish the "Small" pack.
-- **Exit:** a fresh machine installs the hub plus the Small pack in under 5 minutes, with no terminal.
+- Publish the default 4B pack.
+- **Exit:** a fresh machine installs the hub plus the default 4B pack in under 5 minutes, with no terminal.
 
 ### M3 — SDK + harness (Python first, then TypeScript)
 - **SDK:** discovery via `endpoint.json`, pairing, OS-protected key storage, an OpenAI-compatible client, retries, and an "AI unavailable" state.
@@ -135,8 +139,8 @@ ABM-Local-AI/
   - eval smoke test with a tiny model.
 - **End-to-end manual check per OS, on clean VMs or machines** (Windows 10 and 11; macOS; Ubuntu with GNOME and Fedora with KDE):
   1. Download from the page and install without a terminal.
-  2. Install the Small pack.
+  2. Install the default 4B pack.
   3. Run the sample SDK app, approve it in the tray, get schema-valid JSON.
   4. Revoke the app and confirm the next call is rejected.
   5. Confirm no prompt text anywhere under the data directory.
-- Performance: re-run the M0 benchmark on the release build. It must meet the section 10 latency and RAM targets on the reference 8 GB Windows PC (the primary gate), and must stay within 25% of those targets on the Linux reference machine.
+- Performance: re-run the M0 benchmark on the release build. It must meet the section 10 latency and RAM targets on the reference 12 GB Windows PC (the primary gate), and must stay within 25% of those targets on the Linux reference machine.

@@ -16,6 +16,9 @@ const DISK_MARGIN_GB: f64 = 1.0;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Catalog {
     pub version: u32,
+    /// Platform minimum: ABM Local AI supports computers with at least this much RAM, and no
+    /// model in the library may require less.
+    pub min_ram_gb: u32,
     pub allowed_hosts: Vec<String>,
     pub models: Vec<Model>,
 }
@@ -192,10 +195,26 @@ mod tests {
     }
 
     #[test]
-    fn typical_8gb_pc_gets_small_but_not_large_models() {
+    fn nothing_in_the_library_is_below_the_platform_minimum() {
         let c = Catalog::builtin();
-        let hw = pc(7.6, 4, false, 200.0); // an "8 GB" Windows laptop reports a bit less
-        assert!(c.get("qwen3-1.7b").unwrap().compatibility(&hw, false).ok);
+        assert_eq!(c.min_ram_gb, 12);
+        for m in &c.models {
+            assert!(m.requirements.ram_gb >= c.min_ram_gb, "{} requires only {} GB", m.id, m.requirements.ram_gb);
+        }
+    }
+
+    #[test]
+    fn an_8gb_pc_is_below_the_minimum_and_gets_nothing() {
+        let c = Catalog::builtin();
+        let hw = pc(7.6, 8, false, 200.0); // an "8 GB" Windows laptop reports a bit less
+        assert!(c.models.iter().all(|m| !m.compatibility(&hw, false).ok));
+    }
+
+    #[test]
+    fn a_12gb_8_core_pc_gets_the_4b_models_but_not_the_large_ones() {
+        let c = Catalog::builtin();
+        let hw = pc(11.6, 8, false, 200.0);
+        assert!(c.get("qwen3-4b-instruct-2507").unwrap().compatibility(&hw, false).ok);
         assert!(!c.get("qwen3-8b").unwrap().compatibility(&hw, false).ok);
         let big = c.get("qwen3-14b").unwrap().compatibility(&hw, false);
         assert!(!big.ok);
@@ -205,7 +224,7 @@ mod tests {
     #[test]
     fn disk_space_is_checked_only_before_install() {
         let c = Catalog::builtin();
-        let m = c.get("qwen3-1.7b").unwrap();
+        let m = c.get("qwen3-4b-instruct-2507").unwrap();
         let hw = pc(16.0, 8, false, 0.5);
         assert!(!m.compatibility(&hw, false).ok);
         assert!(m.compatibility(&hw, true).ok);

@@ -107,6 +107,28 @@ Medians of 3 runs after one warm-up, prompt cache off, 8,192-token context, repa
 - **Standard** needs a GPU (Metal, or Vulkan/CUDA later) or a fast CPU.
 - On a slower 8 GB Windows PC, expect both to be slower than this proxy.
 
+## 4B-class candidates for the 12 GB minimum (2026-09-28)
+
+The platform minimum was raised to 12 GB RAM, and 4B-class models became the smallest offered.
+Four Apache-2.0 candidates, CPU only with 6 threads (a rough stand-in for a typical 12 GB
+laptop), on the Mac, medians of 3 runs:
+
+| Model | Q4 size | First token, 354-token prompt (≤ 3 s) | First token, 1,662-token prompt | 200-token answer (≤ 20 s) | Gen tok/s | Schema valid | Private memory |
+|---|---|---|---|---|---|---|---|
+| Granite 4.2 3B (IBM) | 2.09 GB | 1.54 s ✅ | 7.58 s ❌ | 11.9 s ✅ | 47 | 3/3 | 2.78 GB |
+| Qwen3 4B Instruct 2507 | 2.33 GB | 1.98 s ✅ | 11.26 s ❌ | 16.9 s ✅ | 36 | 3/3 | 3.67 GB |
+| Qwen3.5 4B | 2.55 GB | 2.42 s ✅ | 11.53 s ❌ | 16.7 s ✅ | 38 | 3/3 | 3.32 GB |
+| Gemma 4 E4B | 4.64 GB | 2.41 s ✅ | 11.7 s ❌ | 16.6 s ✅ | 41 | 3/3 | 3.14 GB (RSS 7.9 GB) |
+
+Readings:
+- **All four fit comfortably in 12 GB.** Each uses under 4 GB of private memory.
+- **All meet the short-prompt and 200-token targets.** None gives a first token within 3 s on
+  a full 1,700-token evidence pack, so grounded features must keep retrieved context tight
+  (a few hundred tokens) and stream their answers.
+- **Thinking stays off** when set server-side (`--chat-template-kwargs`), as tested on Qwen3.5.
+- Granite 4.2 3B and Qwen3.5 4B were added to the model library. The 12 GB reference-PC runs
+  on Windows and Linux are still needed.
+
 ## Invoice Analytics bakeoff baseline
 
 Run on the Mac with Metal, using the pinned llama-server (the M5 Max is fast, so read these

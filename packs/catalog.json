@@ -1,46 +1,45 @@
 {
   "version": 1,
-  "note": "Model library shown in the hub. Apache-2.0 or MIT only. Requirements are what a computer needs to run the model comfortably (usable speed with room left for the OS and other apps), derived from the M0 measurements in docs/spike-results.md: working set is about the file size plus the 8k-token context cache plus 0.5 GB, and total RAM must leave about 4 GB for everything else. They are provisional until the Windows and Linux reference-PC benchmarks.",
-  "allowed_hosts": ["huggingface.co", "*.hf.co"],
+  "note": "Model library shown in the hub. Apache-2.0 or MIT only. Requirements are what a computer needs to run the model comfortably (usable speed with room left for the OS and other apps), derived from the M0 measurements in docs/spike-results.md: working set is about the file size plus the 8k-token context cache plus 0.5 GB, and total RAM must leave about 4 GB for everything else. The platform minimum is 12 GB RAM (decided 2026-09-28): nothing in the library may require less. They are provisional until the Windows and Linux reference-PC benchmarks.",
+  "min_ram_gb": 12,
+  "allowed_hosts": [
+    "huggingface.co",
+    "*.hf.co"
+  ],
   "models": [
     {
-      "id": "qwen3-1.7b",
-      "name": "Qwen3 1.7B",
-      "publisher": "Alibaba Qwen",
+      "id": "granite-4.2-3b",
+      "name": "Granite 4.2 3B",
+      "publisher": "IBM",
       "kind": "chat",
-      "tags": ["Fast", "Everyday tasks"],
-      "summary": "Small and fast. Good for short summaries, rewording and simple questions. Runs on most computers.",
+      "tags": [
+        "Fastest",
+        "Business tasks"
+      ],
+      "summary": "IBM's compact business model. The quickest here on an ordinary computer, and good at summaries, extraction and structured answers.",
       "license": "Apache-2.0",
-      "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf",
-      "file": "Qwen3-1.7B-Q4_K_M.gguf",
-      "size": 1107409472,
-      "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
-      "context": 8192,
-      "server_args": ["--chat-template-kwargs", "{\"enable_thinking\":false}"],
-      "requirements": { "ram_gb": 8, "cpu_cores": 4, "cpu_cores_without_gpu": 4, "needs_gpu": false }
-    },
-    {
-      "id": "qwen3-4b-instruct-2507",
-      "name": "Qwen3 4B Instruct",
-      "publisher": "Alibaba Qwen",
-      "kind": "chat",
-      "tags": ["Balanced", "Follows instructions well"],
-      "summary": "Balanced quality and speed. Better at detailed instructions and structured answers such as tables and JSON.",
-      "license": "Apache-2.0",
-      "url": "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-      "file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-      "size": 2497281120,
-      "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+      "url": "https://huggingface.co/ibm-granite/granite-4.2-3b-GGUF/resolve/main/granite-4.2-3b-Q4_K_M.gguf",
+      "file": "granite-4.2-3b-Q4_K_M.gguf",
+      "size": 2244011552,
+      "sha256": "e0406663965846ae22a403456eb826ccce5f450840491f71952f18a7cb78e7d5",
       "context": 8192,
       "server_args": [],
-      "requirements": { "ram_gb": 12, "cpu_cores": 4, "cpu_cores_without_gpu": 8, "needs_gpu": false }
+      "requirements": {
+        "ram_gb": 12,
+        "cpu_cores": 4,
+        "cpu_cores_without_gpu": 6,
+        "needs_gpu": false
+      }
     },
     {
       "id": "phi-4-mini-instruct",
       "name": "Phi-4 mini",
       "publisher": "Microsoft",
       "kind": "chat",
-      "tags": ["Reasoning", "Maths"],
+      "tags": [
+        "Reasoning",
+        "Maths"
+      ],
       "summary": "Microsoft's compact model. Strong at step-by-step reasoning and maths for its size.",
       "license": "MIT",
       "url": "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q4_K_M.gguf",
@@ -49,14 +48,73 @@
       "sha256": "88c00229914083cd112853aab84ed51b87bdf6b9ce42f532d8c85c7c63b1730a",
       "context": 8192,
       "server_args": [],
-      "requirements": { "ram_gb": 12, "cpu_cores": 4, "cpu_cores_without_gpu": 8, "needs_gpu": false }
+      "requirements": {
+        "ram_gb": 12,
+        "cpu_cores": 4,
+        "cpu_cores_without_gpu": 8,
+        "needs_gpu": false
+      }
+    },
+    {
+      "id": "qwen3-4b-instruct-2507",
+      "name": "Qwen3 4B Instruct",
+      "publisher": "Alibaba Qwen",
+      "kind": "chat",
+      "tags": [
+        "Balanced",
+        "Follows instructions well"
+      ],
+      "summary": "Balanced quality and speed. Better at detailed instructions and structured answers such as tables and JSON.",
+      "license": "Apache-2.0",
+      "url": "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "size": 2497281120,
+      "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+      "context": 8192,
+      "server_args": [],
+      "requirements": {
+        "ram_gb": 12,
+        "cpu_cores": 4,
+        "cpu_cores_without_gpu": 8,
+        "needs_gpu": false
+      }
+    },
+    {
+      "id": "qwen3.5-4b",
+      "name": "Qwen3.5 4B",
+      "publisher": "Alibaba Qwen",
+      "kind": "chat",
+      "tags": [
+        "Newest",
+        "Balanced"
+      ],
+      "summary": "The newest compact Qwen model. Balanced quality and speed, with strong instruction following.",
+      "license": "Apache-2.0",
+      "url": "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",
+      "file": "Qwen3.5-4B-Q4_K_M.gguf",
+      "size": 2740937888,
+      "sha256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+      "context": 8192,
+      "server_args": [
+        "--chat-template-kwargs",
+        "{\"enable_thinking\":false}"
+      ],
+      "requirements": {
+        "ram_gb": 12,
+        "cpu_cores": 4,
+        "cpu_cores_without_gpu": 8,
+        "needs_gpu": false
+      }
     },
     {
       "id": "qwen3-8b",
       "name": "Qwen3 8B",
       "publisher": "Alibaba Qwen",
       "kind": "chat",
-      "tags": ["Higher quality", "Longer documents"],
+      "tags": [
+        "Higher quality",
+        "Longer documents"
+      ],
       "summary": "Noticeably better answers on harder questions and longer documents. Needs a well-equipped computer.",
       "license": "Apache-2.0",
       "url": "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf",
@@ -64,15 +122,26 @@
       "size": 5027783488,
       "sha256": "d98cdcbd03e17ce47681435b5150e34c1417f50b5c0019dd560e4882c5745785",
       "context": 8192,
-      "server_args": ["--chat-template-kwargs", "{\"enable_thinking\":false}"],
-      "requirements": { "ram_gb": 16, "cpu_cores": 6, "cpu_cores_without_gpu": 12, "needs_gpu": false }
+      "server_args": [
+        "--chat-template-kwargs",
+        "{\"enable_thinking\":false}"
+      ],
+      "requirements": {
+        "ram_gb": 16,
+        "cpu_cores": 6,
+        "cpu_cores_without_gpu": 12,
+        "needs_gpu": false
+      }
     },
     {
       "id": "qwen3-14b",
       "name": "Qwen3 14B",
       "publisher": "Alibaba Qwen",
       "kind": "chat",
-      "tags": ["High quality", "Complex tasks"],
+      "tags": [
+        "High quality",
+        "Complex tasks"
+      ],
       "summary": "High-quality answers for complex analysis and writing. Too slow without a GPU, so it needs an Apple Silicon Mac for now.",
       "license": "Apache-2.0",
       "url": "https://huggingface.co/unsloth/Qwen3-14B-GGUF/resolve/main/Qwen3-14B-Q4_K_M.gguf",
@@ -80,15 +149,26 @@
       "size": 9001753984,
       "sha256": "5eaa0870bd81ed3b58a630a271234cfa604e43ffb3a19cd68e54a80dd9d52a66",
       "context": 8192,
-      "server_args": ["--chat-template-kwargs", "{\"enable_thinking\":false}"],
-      "requirements": { "ram_gb": 16, "cpu_cores": 8, "cpu_cores_without_gpu": 8, "needs_gpu": true }
+      "server_args": [
+        "--chat-template-kwargs",
+        "{\"enable_thinking\":false}"
+      ],
+      "requirements": {
+        "ram_gb": 16,
+        "cpu_cores": 8,
+        "cpu_cores_without_gpu": 8,
+        "needs_gpu": true
+      }
     },
     {
       "id": "qwen3-30b-a3b-instruct-2507",
       "name": "Qwen3 30B-A3B Instruct",
       "publisher": "Alibaba Qwen",
       "kind": "chat",
-      "tags": ["Most capable", "Needs lots of memory"],
+      "tags": [
+        "Most capable",
+        "Needs lots of memory"
+      ],
       "summary": "The most capable model here. Its mixture-of-experts design makes it quicker than its size suggests, but it needs a lot of memory.",
       "license": "Apache-2.0",
       "url": "https://huggingface.co/unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF/resolve/main/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
@@ -97,23 +177,40 @@
       "sha256": "6c997b8af17debdfb01d890214400ccbab00db6acc0ba8da5de1cc906c4774d0",
       "context": 8192,
       "server_args": [],
-      "requirements": { "ram_gb": 32, "cpu_cores": 8, "cpu_cores_without_gpu": 8, "needs_gpu": false }
+      "requirements": {
+        "ram_gb": 32,
+        "cpu_cores": 8,
+        "cpu_cores_without_gpu": 8,
+        "needs_gpu": false
+      }
     },
     {
       "id": "qwen3-embedding-0.6b",
       "name": "Qwen3 Embedding 0.6B",
       "publisher": "Alibaba Qwen",
       "kind": "embeddings",
-      "tags": ["Search", "Not a chat model"],
-      "summary": "Lets apps search documents by meaning rather than exact words. It doesn't chat. Small enough for any computer.",
+      "tags": [
+        "Search",
+        "Not a chat model"
+      ],
+      "summary": "Lets apps search documents by meaning rather than exact words. It doesn't chat. Small and light.",
       "license": "Apache-2.0",
       "url": "https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf",
       "file": "Qwen3-Embedding-0.6B-Q8_0.gguf",
       "size": 639150592,
       "sha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439",
       "context": 8192,
-      "server_args": ["--embeddings", "--pooling", "last"],
-      "requirements": { "ram_gb": 8, "cpu_cores": 2, "cpu_cores_without_gpu": 2, "needs_gpu": false }
+      "server_args": [
+        "--embeddings",
+        "--pooling",
+        "last"
+      ],
+      "requirements": {
+        "ram_gb": 12,
+        "cpu_cores": 2,
+        "cpu_cores_without_gpu": 2,
+        "needs_gpu": false
+      }
     }
   ]
 }
