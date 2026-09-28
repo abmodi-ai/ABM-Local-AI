@@ -1,21 +1,28 @@
-:root { color-scheme: light dark; --accent: #0f766e; --muted: #6b7280; --err: #b91c1c; }
+/* Light theme only, regardless of the OS setting (the window theme is also fixed to Light in tauri.conf.json). */
+:root {
+  color-scheme: light;
+  --bg: #ffffff; --surface: #f6f7f9; --border: #d1d5db; --text: #111827; --muted: #6b7280;
+  --accent: #0f766e; --accent-text: #ffffff; --ok: #15803d; --err: #b91c1c;
+}
 * { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--text); }
 body { font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif; margin: 0; padding: 20px 24px; }
 header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 h1 { font-size: 20px; margin: 0; }
 h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 18px 0 6px; }
 .row { display: flex; gap: 8px; }
-input { flex: 1; padding: 7px 9px; border: 1px solid #9ca3af66; border-radius: 6px; font: inherit; background: transparent; color: inherit; }
-button { padding: 7px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
-button.secondary { background: #6b728033; color: inherit; }
+input { flex: 1; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; font: inherit; background: var(--bg); color: var(--text); }
+input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+button { padding: 7px 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-text); font: inherit; cursor: pointer; }
+button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
 button:disabled { opacity: .5; cursor: default; }
-.badge { padding: 2px 9px; border-radius: 999px; font-size: 12px; background: #6b728033; }
-.badge.ready { background: #15803d; color: #fff; }
-.badge.failed { background: var(--err); color: #fff; }
+.badge { padding: 2px 9px; border-radius: 999px; font-size: 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.badge.ready { background: var(--ok); color: #fff; border-color: var(--ok); }
+.badge.failed { background: var(--err); color: #fff; border-color: var(--err); }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; word-break: break-all; }
 .muted { color: var(--muted); }
 .error { color: var(--err); white-space: pre-wrap; }
-.answer { white-space: pre-wrap; padding: 10px; border-radius: 6px; background: #6b72801a; font: inherit; }
+.answer { white-space: pre-wrap; padding: 10px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); font: inherit; }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: 3px 14px; margin: 0; }
 dt { color: var(--muted); }
 dd { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; word-break: break-all; }
