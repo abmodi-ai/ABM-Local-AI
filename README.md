@@ -1,12 +1,14 @@
 # ABM Local AI
 
-A private AI hub that runs on your own computer. One download provides local AI models to
-every app that needs them, so apps don't each bundle their own. Nothing is sent to the cloud.
+A private local AI server for your own computer. ABM Local AI downloads, verifies, runs and
+serves AI models. ABM's free apps connect to it to use those models on the same computer, so no
+app bundles its own model. ABM Local AI has no chat of its own; the apps provide the user
+experience.
 
 ```
-  ABM Invoice Analytics ─┐                          ┌─ Model packs (separate downloads)
-  Future app #2 ─────────┼──► ABM Local AI (hub) ───┤   4B · larger · embeddings
-  Future app #3 ─────────┘    this computer only    └─ added and removed in the hub
+  ABM Attesta ───────────┐                             ┌─ Model packs (separate downloads)
+  ABM Invoice Analytics ─┼──► ABM Local AI (server) ───┤   ABM models · open 4B+ models · embeddings
+  Future ABM apps ───────┘    this computer only       └─ downloaded, verified, run, served
 ```
 
 - **One hub, many apps.** Apps find the hub automatically and ask to connect. You approve each
@@ -17,9 +19,10 @@ every app that needs them, so apps don't each bundle their own. Nothing is sent 
   other and collects nothing in the background. Sign-in uses the computer's own login (Touch ID
   or Windows Hello). The internet is used only for model downloads you start and for crash or
   problem reports you choose to send, after previewing exactly what's in them.
-- **ABM models.** Alongside open models, the library hosts ABM's own models for specific jobs,
-  starting with **ABM Attesta**, a knowledge chat assistant for validation and QA teams (not
-  for use in GxP environments). See [the Attesta plan](docs/attesta-plan.md).
+- **ABM models and apps.** Alongside open models, the library hosts ABM's own models for
+  specific jobs. Each is paired with a free ABM app that connects to this server. The first is
+  **ABM Attesta**, a knowledge chat app for validation and QA teams (a separate project in
+  `ABM-AI-Models/ABM-Attesta`).
 - **Guardrails outside the model.** The hub enforces a baseline policy for every app, and a
   shared harness library gives each app its domain checks. The model proposes; code decides.
 - **Standard interface.** It exposes an OpenAI-compatible API on the local machine, so tools you

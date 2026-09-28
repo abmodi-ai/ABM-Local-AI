@@ -4,8 +4,10 @@ Status: draft for review · Owner: ABM · First client app: ABM Invoice Analytic
 
 ## 1. Summary
 
-ABM Local AI is a desktop hub that runs open-source language models locally and serves them to
-every ABM app on the same computer. It replaces the per-app model runtime. Each app gets:
+ABM Local AI is a local AI server: it downloads, verifies, runs and serves language models on
+the user's computer, and ABM's free desktop apps connect to it to use them. It has no chat or
+app features of its own. ABM's own models (e.g. `abm-attesta-4b` for the ABM Attesta app) are
+hosted alongside open models. It replaces the per-app model runtime. Each app gets:
 
 - a shared, already-running model (no per-app 2–5 GB download);
 - a local, OpenAI-compatible API;
@@ -32,10 +34,10 @@ The hub ships without a model. Models are separate **model packs** the user inst
 2. Users can add, remove and switch model packs without reinstalling apps.
 3. Privacy guarantees hold for every app, including badly written ones. The hub listens only on
    the local machine, isolates apps from each other and collects no data in the background.
-   Prompts and outputs are never stored by the hub itself. (Chat models such as ABM Attesta
-   keep conversations the user saves, encrypted on the device.) The only data that leaves the
-   computer is a crash or inaccuracy report the user chooses to send after previewing it
-   (decided 2026-09-28).
+   Prompts and outputs are never stored by the hub itself. (Apps such as ABM Attesta may keep
+   conversations the user saves, encrypted on the device, under their own privacy design.) The
+   only data that leaves the computer is a crash or inaccuracy report the user chooses to send
+   after previewing it (decided 2026-09-28).
 4. A reusable harness (context, tools, output checks, evaluation) so each new app gets
    trustworthy AI features quickly.
 5. Model packs are scored against each app's task suite, so an app only uses models that pass
