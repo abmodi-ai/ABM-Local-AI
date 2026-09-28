@@ -1,270 +1,201 @@
-# Plan: ABM Attesta, an offline assistant for validating AI and agentic AI systems
+# Plan: ABM Attesta, a knowledge chat assistant for validation and QA teams
 
-Status: draft for review, 2026-09-28 · Base model: Qwen3.5 4B (chosen in the pilot bake-off,
-`docs/eval/pilot-2026-09-28.md`) · Minimum computer: 12 GB RAM, CPU only · ⚖ = needs counsel's
-review · This supersedes the GAMP-only scope of `docs/validation-model-plan.md`; that plan's data
-rules (§3) still apply.
+Status: draft for review, updated 2026-09-28 · Base model: Qwen3.5 4B (chosen in the pilot bake-off,
+`docs/eval/pilot-2026-09-28.md`) · Platforms: **macOS and Windows** · Minimum computer: 12 GB
+RAM, CPU only · ⚖ = needs counsel's review
 
 ---
 
-## 1. The product
+## 1. What Attesta is
 
-**Name: ABM Attesta** (working name; from "attest": to confirm that something is valid).
-Alternatives if trademark clearance fails: *ABM Assura*, *ABM Provena*. ⚖ Before public use, run
-a trademark clearance search in the US (USPTO), EU (EUIPO) and UK (UKIPO), in software and AI
-classes 9 and 42. The name must not include "GAMP", "Annex", "FDA" or "EMA".
+**ABM Attesta** is a chat model for validation and QA engineering teams. It helps them:
+- **generate ideas**: test scenarios, risks they may have missed, questions to ask a supplier;
+- **draft documents**: validation plans, intended-use statements, test-plan outlines,
+  requirement lists;
+- **understand guidance**: explains the EU GMP Annex 22 draft, the FDA–EMA AI principles, Annex
+  11 and Part 11, and cites where each point comes from;
+- **work with their own material**: users can add their own documents (SOP drafts, URSs,
+  templates) to a conversation. They're indexed on the computer and never leave it.
 
-**What it does.** Helps quality, validation and IT people plan and review the validation of AI
-systems used in regulated (GxP) work, including agentic AI (systems that plan and call tools). For
-example:
-- "Is this AI use critical under the Annex 22 draft?"
-- "What acceptance criteria and test-data independence do we need for this defect classifier?"
-- "Draft the intended-use statement for our deviation-triage assistant."
-- "Which of the FDA–EMA principles does our monitoring plan not yet cover?"
+**What it isn't.** Attesta is a thinking and drafting aid. It is **not used in a GxP
+environment**, doesn't make or approve GxP decisions, and isn't itself a validated system. The
+app says so plainly ("Drafting aid: review everything before use") and so does the model card.
+It therefore needs the **basic product validation** described in §7, not GxP computerised-system
+validation. (The Annex 22 draft itself says LLMs should not be used in critical GMP applications;
+Attesta's positioning keeps it clearly outside that.)
 
-**What it isn't.**
-- It is **not** a validated GMP system and must not make GMP decisions. The Annex 22 draft (§1)
-  says LLMs "should not be used in critical GMP applications". In non-critical use, qualified
-  personnel must check the output: a human-in-the-loop.
-- Attesta is an LLM, so it is positioned as a **non-critical advisory tool with a mandatory
-  human reviewer**. This is stated in the app, in every generated document and in the model
-  card.
-- It also teaches this boundary to users validating their own generative or agentic systems.
+**Where it lives.** Attesta is a download inside ABM Local AI, like the other models in the
+library. It is the first of a family of **ABM models**, each for a different job. They all share
+the same hub, sign-in, reports and download system. §4 describes what the hub needs for that.
 
-**How it works (Option C).**
-- A fine-tuned Qwen3.5 4B answers from a local **knowledge pack** of public regulatory texts.
-- Every claim cites a passage, and code checks the citations before the user sees the answer.
-- For structured work (classification, test plans), the model fills in forms and **code applies
-  the rules**: the model proposes; code decides (§5).
+## 2. Context building and engineering
 
-## 2. Knowledge and training sources (no copyright infringement)
+Attesta is a 4B model, so its quality depends on what's in its context. The hub, not the model,
+decides what goes in, for each turn:
 
-Rule (unchanged): train only on material whose licence allows commercial reuse and adaptation.
-Record the provenance of every training example. Facts and ideas aren't copyrighted; a
-publisher's wording can be.
+| Context part | Source | Budget (of ~12k tokens) |
+|---|---|---|
+| System instructions and Attesta's answer format | Built into the pack | ~600 |
+| **Guidance passages** relevant to this turn | Knowledge pack: hybrid retrieval (Qwen3 Embedding + BM25, as in the pilot) | ~2,500 (4–6 passages) |
+| **User's own documents** relevant to this turn | Local index of files the user added to the conversation | ~3,000 |
+| Conversation so far | Recent turns verbatim; older turns replaced by a running summary | ~3,500 |
+| Room for the answer | — | ~2,000 |
 
-### 2.1 Core sources (verified 2026-09-28)
+Mechanics:
+- **Retrieval every turn**, using the question plus a short rewrite of it in context. Follow-ups
+  such as "and for the test data?" still find the right passages.
+- **Citations:** guidance passages are cited as `[A22 §6.1]` or `[FDA–EMA P8]`, and user documents
+  as `[your file: URS-v3.docx p.4]`. Code checks each citation points to something actually in the
+  context. Answers with broken citations are regenerated once, then shown with a warning.
+- **Memory:** a conversation's summary and the user-document index are stored locally, encrypted
+  with a key held in the OS keychain (macOS Keychain, Windows DPAPI). They're deleted with the
+  conversation.
+- **Context window:** 16k tokens at run time. That fits in 12 GB with Qwen3.5 4B (about 3.3 GB of
+  private memory at 8k; the KV cache grows linearly) and leaves room for the OS.
+- **Drafting templates:** "Draft a validation plan" fills a fixed outline (purpose, scope,
+  intended use, roles, risk assessment, test approach, acceptance criteria, traceability,
+  deliverables). Section by section, each part is grounded in guidance and the user's documents.
+  Acceptance criteria are left as proposals for the team to decide.
+- **Export:** Markdown or Word (.docx), with the sources used listed at the end.
+
+## 3. Sources and training data (no copyright infringement)
+
+The rules and source list are unchanged from the previous version of this plan. Only material
+whose licence allows commercial reuse is used, and every training example is logged with where
+it came from.
 
 | Source | Status | Terms |
 |---|---|---|
-| **EU GMP Annex 22 "Artificial Intelligence", consultation draft (7 July 2025)**: scope, intended use, acceptance criteria, test data and its independence, test execution, explainability, confidence, operation, glossary (~2,500 words) | 🟢 ⚖ | European Commission content is CC BY 4.0 (Commission Decision C(2019) 1655): reuse, including commercial, with acknowledgement. **It is a draft:** the final text is expected around Q4 2026, so the pack and training data must be versioned and refreshed when it's final |
-| **FDA–EMA "Guiding principles of good AI practice in drug development" (January 2026)**: the 10 principles (~720 words) | 🟢 ⚖ | EMA copy: commercial reproduction allowed "provided that EMA is always acknowledged as the source… in each copy". FDA copy: US government work. Put the acknowledgement in the knowledge pack, the model card and NOTICE |
-| EU GMP Annex 11 (2011), plus the revised Annex 11 and Chapter 4 consultation drafts (July 2025) | 🟢 | Commission CC BY 4.0 |
-| 21 CFR Part 11; FDA Part 11 Scope & Application; FDA Data Integrity Q&A (already in the eval pack) | 🟢 | US government works, public domain |
-| MHRA GXP Data Integrity Guidance | 🟢 | Open Government Licence v3.0 |
+| EU GMP Annex 22 "Artificial Intelligence", consultation draft (7 July 2025) | 🟢 ⚖ | European Commission: CC BY 4.0 (attribution). **Draft:** final text expected ~Q4 2026; version the pack |
+| FDA–EMA "Guiding principles of good AI practice in drug development" (Jan 2026) | 🟢 ⚖ | EMA: commercial reproduction allowed with EMA acknowledged in each copy; FDA copy is a US government work |
+| EU GMP Annex 11 (2011) and the 2025 revision drafts; 21 CFR Part 11; FDA Part 11 and Data Integrity guidance; MHRA Data Integrity guidance | 🟢 | CC BY 4.0 / public domain / Open Government Licence |
+| FDA AI-for-regulatory-decision-making draft guidance (2025), GMLP principles, PCCP guidance, EMA AI reflection paper, NIST AI RMF and AI 600-1, EU AI Act | 🟢 to verify one by one | Public domain / EU reuse / EMA terms |
+| OWASP Top 10 for LLM Applications | 🟡 CC BY-SA: knowledge pack only, not training | ⚖ |
+| ISPE GAMP® guides, ISO/IEC 42001 and 23894, journals, books | 🔴 excluded | Copyright |
+| SME-written scenarios, worked examples and plan outlines | 🟢 owned by ABM | Copyright assigned by contract ⚖ |
 
-### 2.2 Supporting public AI guidance (to verify one by one before use)
+Training data (3,000–6,000 examples) is generated **locally** by gpt-oss-120b (Apache-2.0),
+grounded in one source passage at a time. It's filtered for copied text and for overlap with
+the evaluation set, and reviewed by the SME. Because Attesta is a chat assistant, the mix is
+weighted towards conversation:
 
-| Source | Expected status | Why it matters |
-|---|---|---|
-| FDA draft guidance "Considerations for the Use of AI to Support Regulatory Decision-Making for Drug and Biological Products" (Jan 2025) | 🟢 likely (US government work) | Credibility-assessment framework, context of use |
-| FDA / Health Canada / MHRA "Good Machine Learning Practice for Medical Device Development: Guiding Principles" | 🟢/🟡 (joint; check the Health Canada terms) | Lifecycle and monitoring |
-| FDA guidance on Predetermined Change Control Plans for AI-enabled device software | 🟢 likely | Managing model changes |
-| EMA reflection paper on AI in the medicinal product lifecycle (2024) | 🟢 (EMA terms: acknowledge the source) | EU regulatory view across the lifecycle |
-| NIST AI Risk Management Framework 1.0 and the Generative AI Profile (NIST AI 600-1) | 🟢 likely (US government works) | Risk vocabulary for generative and agentic systems |
-| EU AI Act, Regulation (EU) 2024/1689 (EUR-Lex) | 🟢 (EU legislation, free reuse) | Obligations for high-risk AI, human oversight, logging |
-| OWASP Top 10 for LLM Applications | 🟡 ⚖ CC BY-SA: share-alike may attach to weights; **knowledge pack only, not training** | Security risks of agents (prompt injection, excessive agency) |
-| 🔴 ISPE GAMP® AI Guide, ISO/IEC 42001, ISO/IEC 23894, IEEE standards, journals, books, paid courses | Copyright: never in training or the pack | Link to them only |
-
-### 2.3 Original content we own
-
-A contracted **AI-validation subject-matter expert (SME)** writes worked examples in their own
-words, under an agreement that assigns copyright to ABM. That covers what the regulations don't
-spell out: how to test an agent's tool use, prompt-injection testing, evaluating LLM outputs,
-human-in-the-loop design. Plus scenario libraries: 30–50 realistic AI use cases across GxP
-(visual inspection, deviation triage, batch-record review assistant, pharmacovigilance case
-intake agent, and so on), with the SME's analysis of each.
-
-## 3. The work, step by step (with the commands)
-
-`[exists]` = already in the repo; `[new]` = to build. All steps run on the M5 Max (128 GB) unless
-noted, so no data leaves the machine.
-
-### Phase 0: foundations (weeks 1–2)
-
-| # | Step | Command / tool |
-|---|---|---|
-| 0.1 | **Base-model spike:** confirm MLX-LM can LoRA-train the *text* part of Qwen3.5 4B (it is an image-text model), and that the fused result converts to GGUF and runs in the pinned llama.cpp. Fallback: Qwen3 4B Instruct 2507 (text-only; scored close in the bench) | `uv run --with mlx-lm mlx_lm.lora --model Qwen/Qwen3.5-4B --train --data train/spike --iters 50` `[new data]` |
-| 0.2 | Source registry for AI guidance: licence, URL, date, draft/final | `eval/sources-ai.json` `[new]`, same format as `eval/sources.json` |
-| 0.3 | Build the knowledge pack (add Annex 22 and FDA–EMA parsers) | `uv run eval/build_pack.py --sources eval/sources-ai.json` `[exists; add --sources and 2 parsers]` |
-| 0.4 | Hire or contract the SME; copyright assignment and NDA ⚖ | — |
-| 0.5 | Trademark search for "Attesta" ⚖ | — |
-
-### Phase 1: evaluation set first (weeks 2–4, SME)
-
-| # | Step | Command / tool |
-|---|---|---|
-| 1.1 | 300 questions in the eval format: 50% requirements (Annex 22 / principles / Annex 11), 25% judgement on scenarios, 10% terminology, 15% unanswerable. Plus a **tool-use set** of 60 tasks (§5) | `eval/questions/attesta-sme.jsonl` `[new]` |
-| 1.2 | Baseline: Qwen3.5 4B + pack, no fine-tuning (this is the number to beat) | `python3 eval/run.py --questions eval/questions/attesta-sme.jsonl && python3 eval/grade.py && python3 eval/report.py` `[exists]` |
-| 1.3 | Grader fix from the pilot: show the grader each passage's document title | `eval/grade.py` `[small change]` |
-| 1.4 | SME reviews the grader's sample and records agreement | `.cache/eval/review/sme_sample.jsonl` `[exists]` |
-
-### Phase 2: training data (weeks 4–8)
-
-| # | Step | Command / tool |
-|---|---|---|
-| 2.1 | **Grounded generation:** gpt-oss-120b (Apache-2.0, local) writes questions and cited answers *from one passage at a time*, never from memory. Types and shares: grounded Q&A 40%, refusals 15%, scenario judgement 20%, tool-use traces 15%, terminology 5%, general instruction 5% | `python3 train/generate.py --generator judge-gpt-oss-120b --pack .cache/eval/pack --plan train/mix.yaml` `[new]` |
-| 2.2 | **Filters:** reject any example with 8+ consecutive words not found in its source or in SME text (leak filter); reject invalid citations and duplicates; drop anything close to an evaluation question (contamination check, embedding similarity > 0.9) | `python3 train/filter.py` `[new]` |
-| 2.3 | **SME review:** 100% of scenario and tool-use examples, and at least 20% of the rest | `python3 train/review.py` `[new]`: a local review page, accept/edit/reject |
-| 2.4 | **Provenance ledger** for every example: source, section, licence, generator and version, prompt template, reviewer, date | `train/data/ledger.jsonl` `[new]` |
-| 2.5 | Split into train and validation sets (the eval set is never included) | `python3 train/split.py` → `train/data/{train,valid}.jsonl` `[new]` |
-
-Target: 3,000–6,000 examples for v1. The core regulatory texts are short (~3,200 words), so
-depth comes from scenarios and SME material, not from repeating the texts.
-
-### Phase 3: fine-tune and evaluate (weeks 8–10)
-
-| # | Step | Command / tool |
-|---|---|---|
-| 3.1 | LoRA training (typical start: 16 layers, rank 16, learning rate 1e-5, 2–3 epochs, prompt masked so only answers are learned) | `uv run --with mlx-lm mlx_lm.lora --model Qwen/Qwen3.5-4B --train --data train/data --fine-tune-type lora --num-layers 16 --batch-size 4 --iters <≈3 epochs> --learning-rate 1e-5 --mask-prompt --grad-checkpoint --adapter-path train/adapters/attesta-v1` |
-| 3.2 | Check on held-out data | `mlx_lm.lora … --test` |
-| 3.3 | Merge the adapter into the base weights | `mlx_lm.fuse --model Qwen/Qwen3.5-4B --adapter-path train/adapters/attesta-v1 --save-path train/fused/attesta-v1` |
-| 3.4 | Convert to GGUF and quantise to Q4_K_M (tools from the pinned llama.cpp build) | `python convert_hf_to_gguf.py train/fused/attesta-v1 --outtype f16` then `llama-quantize attesta-v1-f16.gguf attesta-4b-v1-Q4_K_M.gguf Q4_K_M` |
-| 3.5 | Run the same evaluation as the baseline, plus the tool-use set, plus a **general-skills regression** check (it must not get worse at ordinary writing) | `python3 eval/run.py --only attesta-v1 …` `[exists; add contestant]` |
-| 3.6 | Speed and memory on the 12 GB Windows reference PC | `python bench/bench.py attesta-v1 --runs 5` `[exists]` |
-| 3.7 | Iterate on data, not hyperparameters, until the gates pass (§7) | — |
-
-### Phase 4: product integration (weeks 8–12, in parallel)
-
-| # | Step | Where |
-|---|---|---|
-| 4.1 | Model pack `attesta-4b-v1` + knowledge pack `ai-validation-pack` in the catalog, with licence, NOTICE (EMA/Commission acknowledgements, Qwen Apache-2.0) and the model card | `packs/catalog.json`, new pack-manifest fields |
-| 4.2 | Hub tool-calling loop with step/time budgets and citation checks, i.e. the M3 harness (§5) | `hub/core` + SDK |
-| 4.3 | Attesta window: chat with sources shown, a "Human review required" banner, **Report a problem** on every answer | `hub/app/ui` |
-| 4.4 | Accounts and reports (§6) | `hub/core/account.rs`, `reports.rs`; backend §6.4 |
-| 4.5 | Signing and notarisation for public release | M5 of the implementation plan |
-
-### Phase 5: release and after (week 12 onward)
-
-- **v1 release criteria:** §7.
-- **Monthly:** triage inaccuracy reports and fix them in the knowledge pack or the training data;
-  re-run the evaluation.
-- **When Annex 22 is final (expected Q4 2026):** new pack version, re-generated training data
-  for the changed clauses, attesta-v2.
-
-## 4. Team and cost (estimate)
-
-| Role | Effort |
+| Type | Share |
 |---|---|
-| AI-validation SME (contract) | ~40–60 days over 12 weeks (eval set, review, scenarios) |
-| ML engineer (data pipeline, training, evaluation) | 1 person, ~12 weeks |
-| App/backend engineer (tool loop, accounts, reports) | 1 person, ~8 weeks |
-| Counsel ⚖ | Licences, trademark, privacy policy, terms: ~5–10 days |
+| Multi-turn chats with follow-ups (tests context use) | 30% |
+| Grounded Q&A with citations | 25% |
+| Drafting (plan sections, intended use, test ideas) from guidance + a sample user document | 20% |
+| "The sources don't cover this": refusals and asking for more information | 15% |
+| General writing (to avoid losing ordinary skills) | 10% |
 
-**Compute:**
-- **Training:** the M5 Max is enough for LoRA on 4B, and for generation and grading with
-  gpt-oss-120b, so there's no cloud GPU cost.
-- **Backend:** small (§6.4).
-- **Test hardware:** a 12 GB Windows reference PC and a 12 GB Linux reference PC.
+## 4. What ABM Local AI needs to host ABM models
 
-## 5. Tool calls: what Attesta can call at runtime
+These changes serve Attesta and every later ABM model.
 
-An agentic assistant for validating agents should itself follow the rules it teaches:
-- a fixed list of declared tools;
-- step and time budgets;
-- every tool is read-only or produces a draft;
-- the model never "decides" a classification. It fills in a form, and code applies the
-  published criteria.
+1. **Pack bundles.** One library card installs a model file plus its knowledge pack plus its
+   settings (system instructions, context budgets, templates). The catalog gets a
+   `bundle` entry type with a `publisher: "ABM"` badge and an **ABM models** section at the top
+   of the library.
+2. **A chat window per model.** It replaces today's "Try it" box. It has:
+   - conversations;
+   - sources shown under each answer;
+   - adding files;
+   - export;
+   - a **Report a problem** button on every answer.
+3. **Local document indexing.** PDF, DOCX, TXT and MD: text extraction and embeddings on the
+   device, using the same Qwen3 Embedding model.
+4. **One model loaded at a time** (as today). Switching models stops one and starts the other,
+   while conversations are kept.
+5. **Versioned packs.** For example, the Annex 22 final text ships as a knowledge-pack update
+   without retraining the model.
 
-| Tool | Input (JSON schema, bounded strings) | Output | Notes |
-|---|---|---|---|
-| `search_sources` | `query`, `k≤6`, optional `source` filter | passages with ids, titles, licence | Hybrid retrieval from the pilot (Qwen3 Embedding + BM25) |
-| `get_passage` | `id` | full passage + neighbours | To read around a hit |
-| `assess_annex22_applicability` | form: `used_in_gmp`, `impact_on_patient_safety/product_quality/data_integrity`, `learns_during_use`, `deterministic_output`, `generative_or_llm`, `human_in_the_loop`, free-text `context_of_use` | **Code** returns: in or out of Annex 22 scope, "not for critical use" flags, the clauses that apply, and questions still open | Encodes Annex 22 draft §1 and §3.3; versioned with the draft |
-| `map_to_principles` | a plan or description the user pasted | per principle 1–10: covered / partly / missing, each with a citation | The model fills it in; code checks that each entry cites the principle's passage |
-| `draft_intended_use` | form: task, inputs (sample space), subgroups, limitations, HITL responsibility | a draft in the Annex 22 §3 structure, marked DRAFT for SME approval | Output is a document draft, never an approval |
-| `draft_test_plan` | model type, metrics, subgroups, risk | test plan skeleton: metrics and acceptance criteria (§4), test data and independence (§5–6), execution (§7), explainability and confidence (§8–9), operation and monitoring (§10) | Criteria stay blank for the SME to set: Annex 22 puts that responsibility on the SME |
-| `agent_risk_checklist` | agent description: tools, permissions, autonomy, data | checklist: tool allowlist, least privilege, human approval points, logging, prompt-injection tests, step budgets, rollback | Sourced from NIST AI 600-1, the EU AI Act, OWASP (pack only) and SME material |
-| `export_document` | document id, format (md/docx/pdf) | a file saved locally | Adds the "Advisory draft, human review required" footer and the source list |
+## 5. Sign-in: the computer's own login, no third-party services
 
-Loop limits: at most 8 tool calls and 120 s per request (the Invoice Analytics harness values),
-then a final answer with citations or a refusal. The training data includes tool-use traces
-(Phase 2.1) so the model learns when to call which tool.
+There is no online account and no identity provider. The app uses the sign-in the user already
+has on their computer:
 
-## 6. Privacy, accounts and reports
-
-### 6.1 What changes from the brief, and what doesn't
-
-- **Unchanged.** The hub still runs fully offline and still never stores prompts or answers on
-  its own. There is still **no background telemetry**: nothing is sent automatically, ever.
-- **New:** exactly two kinds of internet use, in addition to model downloads:
-  1. **Account set-up (once, online).** Needed on first launch. After that, the app works
-     offline indefinitely.
-  2. **Reports (only when the user chooses to send one).**
-     - *Crash reports:* after a crash, the next launch offers "Send crash report?", with a
-       preview of exactly what's sent.
-     - *Inaccuracy reports:* the **Report a problem** button on an answer.
-- The brief's goal 3 ("no telemetry"), §6.4 (network) and the CI socket test are updated to allow
-  only the account and report hosts, and only on these user actions.
-
-### 6.2 What is collected
-
-| Data | When | Contents | Never included |
-|---|---|---|---|
-| **Account** | Set-up | Email (verified), name, organisation, country, accepted terms/privacy version, created date | Passwords (held only by the identity provider), payment data (free product) |
-| **Session** | Set-up | A signed token so the app can show "Signed in as…" offline. No expiry needed for offline use (the product is free) | — |
-| **Crash report** | User clicks Send | App/OS/pack versions, backtrace with symbols, hardware class (RAM band, CPU class), llama-server exit code, **scrubbed** logs | Memory dumps, prompts, answers, file paths with usernames (scrubbed), IP address stored beyond abuse rate-limiting |
-| **Inaccuracy report** | User clicks Report a problem | Question, answer, cited passage ids, pack and model versions, user's comment and category (wrong fact / bad citation / should have refused / other) | Anything the user removes in the preview. The app first **flags likely personal or confidential data** (emails, names, IDs, numbers) for the user to redact |
-
-Separate choices, off by default, asked when a report is sent:
-- "May ABM use this report to improve Attesta's training data?" (reports can be used to fix bugs
-  without this).
-- "May ABM contact me about this report?"
-
-Apps that declare `data class: sensitive` (e.g. patient data) can send crash reports only. The
-**Report a problem** button there sends only the metadata and the user's comment, never the
-question or answer text.
-
-### 6.3 Legal basics ⚖
-- Privacy policy and terms; lawful basis:
-  - accounts: contract;
-  - reports: consent;
-  - training use: separate explicit consent.
-- Retention:
-  - crash reports: 90 days;
-  - inaccuracy reports: 24 months, or until the fix ships;
-  - accounts: until deleted.
-- Rights:
-  - export and delete account data from the app;
-  - withdraw training consent (removes the report from future training data; the provenance
-    ledger makes this possible).
-- Hosting in the EU, or with EU standard contractual clauses; a data-processing agreement with
-  each provider.
-- Not for children; business users only.
-
-### 6.4 Backend (small)
-
-| Need | Recommended | Why |
+| | macOS | Windows |
 |---|---|---|
-| Sign-in (email + magic link or OAuth; SSO later for companies) | A hosted identity provider (e.g. WorkOS, Auth0, Clerk or Supabase Auth). The desktop app uses the OAuth device-code or system-browser flow | We never handle passwords; enterprise SSO is available later |
-| Report intake API | Cloudflare Workers + D1 (reports) + R2 (attachments). ABM already has a Cloudflare account | Small, cheap, EU-region data localisation available |
-| Crash symbolication | Upload debug symbols per release; symbolise on the server | Readable backtraces without shipping debug info |
-| Review console | A small internal page for triaging inaccuracy reports into "fix pack", "fix training data" or "not a bug" | Closes the loop to Phase 5 |
+| How | LocalAuthentication framework: Touch ID, or the Mac login password as fallback | Windows Hello (`UserConsentVerifier`): face, fingerprint or PIN, with the Windows password as fallback |
+| When | Opening ABM Local AI, and again after a configurable idle time (default: when the Mac/PC locks) | Same |
+| Rust | `objc2-local-authentication` | `windows` crate, `Security::Credentials::UI` |
 
-All endpoints are HTTPS with certificate pinning to ABM's hosts, per-account rate limits, and no
-third-party analytics scripts.
+- **What the app knows about the user:** the OS account name and display name, read locally, so
+  the app can show "Signed in as …".
+- **An optional profile** the user can fill in (name, email, organisation) is used only to
+  prefill reports. It's stored locally and sent only inside a report the user chooses to send.
+- **Nothing identifies the user to ABM** unless they send a report.
+- If the computer has no biometrics or Hello set up, the OS password prompt is used.
+- IT admins can turn the lock off with a policy setting.
 
-## 7. Release gates for Attesta v1
+So no internet is needed for sign-in. The only internet use is:
+- downloading ABM Local AI and model packs, the first time and on updates;
+- sending a report, when the user chooses to.
 
-| Gate | Threshold | Measured by |
+## 6. Reports: crash and inaccuracy (only when the user sends them)
+
+Nothing is sent in the background, ever. Two kinds of report, each previewed before sending:
+
+| Report | Trigger | Contents | Never included |
+|---|---|---|---|
+| **Crash report** | After a crash, the next launch asks "Send crash report?" | App, OS, model and pack versions; symbolised backtrace; RAM band and CPU class; llama-server exit code; scrubbed log lines | Memory dumps, conversation text, file contents, file paths with user names, OS account name |
+| **Inaccuracy report** | **Report a problem** on an answer | The question and answer, the source ids cited, model and pack versions, a category (wrong fact, bad citation, should have said "not covered", unhelpful, other), the user's comment, and optional name and email from the profile | Added user documents (only their file names, and only if the user ticks a box); anything the user removes in the preview. The app highlights likely personal or confidential data first |
+
+- **Separate ticks, off by default:**
+  - "ABM may use this report to improve Attesta";
+  - "ABM may contact me about it".
+- **Where reports go.** One HTTPS endpoint operated by ABM (`reports.abmodi.ai`, for example).
+  It stores reports in ABM's own database. There's no analytics SDK and no third-party crash
+  service in the app.
+- **Hosting.** The endpoint can run on any infrastructure ABM controls. Which one is a decision
+  for ABM (see open questions).
+- **The brief changes:** "no telemetry" becomes "no background data collection; reports only
+  when the user sends them". The CI network test allows only the pack-download and report hosts.
+- **Legal basics ⚖:**
+  - privacy notice shown before the first report;
+  - retention: crash reports 90 days, inaccuracy reports 24 months;
+  - deletion on request, using the report ID shown to the user;
+  - business users only.
+
+## 7. Basic validation of Attesta (product quality, not GxP)
+
+Attesta ships when it passes these checks. They are recorded in a short release report kept
+with each version:
+
+| Check | Target | How |
 |---|---|---|
-| Citation check passes | ≥ 95% of answers | `eval/grade.py` |
-| Answers with a made-up claim | ≤ 5% | Grader, with the SME confirming a sample |
-| Correct facts (answerable) | ≥ 85% | Grader |
-| Correct refusals (unanswerable) | ≥ 90% | Code |
-| Tool-use tasks completed correctly | ≥ 85%; 0 calls to undeclared tools | Tool-use set |
-| Annex 22 applicability decisions | 100% match the SME's answers on 50 scenarios (code decides; this tests the form-filling) | Scenario set |
-| Beats the un-tuned baseline | On every quality gate above | Paired comparison |
-| Speed on the 12 GB Windows PC | ≤ 3 s first token (short prompt), ≤ 20 s for a 200-token answer | `bench/bench.py` |
-| Privacy | Zero network connections except account, report and pack hosts on user action; no prompt text on disk | CI socket and disk tests |
+| Correct facts on the 300-question set | ≥ 85% | `eval/` harness (grader + SME sample) |
+| Answers with a made-up claim | ≤ 10% | Grader, SME-confirmed sample |
+| Citations point to real context | ≥ 90% pass; failures retried or flagged | Code check |
+| Says "not covered" when it should | ≥ 80% | Code check |
+| Multi-turn: follow-ups use earlier context correctly | ≥ 80% on 50 scripted conversations | New conversation set |
+| Drafting: SME rates plan drafts "useful starting point" | ≥ 4/5 average on 20 drafts | SME review |
+| Better than the un-tuned base model | On all of the above | Paired comparison |
+| Speed on a 12 GB Windows PC and a 12 GB Mac | First words ≤ 3 s; 200-token answer ≤ 20 s | `bench/bench.py` |
+| Privacy | No network use except downloads and user-sent reports; conversation text only in the encrypted local store | CI tests |
 
-## 8. Main risks
+Plus a **model card**: purpose, not-for-GxP-use statement, base model (Qwen3.5 4B,
+Apache-2.0), data sources and licences, evaluation results, known limitations.
 
-| Risk | Mitigation |
-|---|---|
-| Annex 22 changes when it's final (1,300 consultation comments) | Versioned pack; the model cites clauses, so a pack refresh fixes most answers; a retrain plan for the final text |
-| Qwen3.5 4B text-only fine-tuning doesn't work cleanly (multimodal architecture) | Phase 0.1 spike in week 1; fall back to Qwen3 4B Instruct 2507 |
-| Too little source text for depth | SME scenarios and worked examples; tool-based structured outputs |
-| Users treat Attesta's output as validated | "Advisory draft, human review required" on every answer and export; positioning in the terms |
-| Reports contain confidential or patient data | Local detection and redaction before sending; text never sent from sensitive apps; consent choices |
-| Copyright claim over training data | Only 🟢 sources; leak filter; provenance ledger; SME copyright assignment; counsel's review |
+## 8. Steps and commands
+
+`[exists]` = in the repo today; `[new]` = to build.
+
+| Week | Step | Command / tool |
+|---|---|---|
+| 1 | Spike: LoRA on Qwen3.5 4B's text part, fuse, convert to GGUF, run in the pinned llama.cpp. Fallback: Qwen3 4B Instruct 2507 | `uv run --with mlx-lm mlx_lm.lora --model Qwen/Qwen3.5-4B --train --data train/spike --iters 50` `[new data]` |
+| 1–2 | AI-guidance source registry and knowledge pack | `eval/sources-ai.json` `[new]`; `uv run eval/build_pack.py --sources eval/sources-ai.json` `[add --sources and parsers]` |
+| 2–4 | SME writes 300 questions + 50 scripted conversations + 20 drafting tasks; baseline run | `python3 eval/run.py --questions eval/questions/attesta-sme.jsonl && python3 eval/grade.py && python3 eval/report.py` `[exists; add conversation mode]` |
+| 4–8 | Generate, filter, review and log training data | `train/generate.py`, `train/filter.py`, `train/review.py`, `train/split.py` `[new]` |
+| 8–9 | Train, test, fuse, convert, quantise | `mlx_lm.lora --model Qwen/Qwen3.5-4B --train --data train/data --fine-tune-type lora --num-layers 16 --batch-size 4 --learning-rate 1e-5 --mask-prompt --grad-checkpoint --adapter-path train/adapters/attesta-v1`, then `mlx_lm.fuse …`, `convert_hf_to_gguf.py … --outtype f16`, `llama-quantize … Q4_K_M` |
+| 9–10 | Evaluate against the base model; speed on both 12 GB PCs; release report | `eval/` + `bench/bench.py` `[exists]` |
+| 4–12 | Hub: bundles and ABM section, chat window, context builder, local document index, local sign-in, reports, report endpoint | `hub/core`, `hub/app` `[new]` |
+| 12 | Publish the `abm-attesta-4b-v1` bundle in the library | `packs/catalog.json` |
+
+## 9. Open questions
+
+1. **Report endpoint hosting:** which infrastructure should ABM's report service run on? It has to
+   be something ABM operates. Cloudflare is where ABM already has an account.
+2. **Linux:** the hub still builds for Linux today. Are ABM models and local sign-in for macOS and
+   Windows only (the Linux hub keeps working without them), or should Linux be dropped?
+3. **The AI-validation SME:** who, and when can they start? Weeks 2–4 depend on them.
+4. **Trademark search** for "ABM Attesta" (US, EU, UK) ⚖.

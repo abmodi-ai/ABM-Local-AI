@@ -31,8 +31,11 @@ The hub ships without a model. Models are separate **model packs** the user inst
 1. Any ABM desktop app can use local AI with no model setup of its own.
 2. Users can add, remove and switch model packs without reinstalling apps.
 3. Privacy guarantees hold for every app, including badly written ones. The hub listens only on
-   the local machine, stores no prompts or outputs, isolates apps from each other and sends no
-   telemetry.
+   the local machine, isolates apps from each other and collects no data in the background.
+   Prompts and outputs are never stored by the hub itself. (Chat models such as ABM Attesta
+   keep conversations the user saves, encrypted on the device.) The only data that leaves the
+   computer is a crash or inaccuracy report the user chooses to send after previewing it
+   (decided 2026-09-28).
 4. A reusable harness (context, tools, output checks, evaluation) so each new app gets
    trustworthy AI features quickly.
 5. Model packs are scored against each app's task suite, so an app only uses models that pass
@@ -109,7 +112,7 @@ The hub ships without a model. Models are separate **model packs** the user inst
 | Tools and permissions | **App** defines them; **hub** enforces the tool list the app declared | Two locks: app logic plus hub policy. |
 | Valid JSON or grammar-constrained output | **Hub** (llama.cpp `json_schema` / GBNF) | Generic, and the most reliable guardrail for small models. |
 | Allowed models, token and time limits, concurrency and quotas | **Hub**, from the app's declared policy | Uniform, and stops one app starving the others. |
-| No prompt storage, isolation between apps, local-only access, no telemetry | **Hub** | Must hold even for a badly written app. |
+| No prompt storage, isolation between apps, local-only access, no background data collection | **Hub** | Must hold even for a badly written app. |
 | Domain vocabulary, format adherence | **Model**, as optional LoRA adapters loaded per app | The one thing weights do well; only when evaluation shows a clear gain. |
 | Safety policy and refusals | **Never the model alone** | Weights can be talked around; they back up code, never replace it. |
 
@@ -160,8 +163,11 @@ semantics in one place.
 - **Isolation between apps:** no shared prompt cache for `sensitive` apps and no cross-app logs.
   KV caches are cleared between apps.
 - **Model integrity:** sha256 verified at install and at load. Unverified files are refused.
-- **Network:** no outbound traffic except pack downloads the user starts, and those go to hosts
-  listed in the catalog. A test fails CI if the hub opens a non-local socket.
+- **Network:** no outbound traffic except pack downloads the user starts (to hosts listed in the
+  catalog) and reports the user sends (to ABM's report endpoint). A test fails CI if the hub
+  opens any other non-local socket.
+- **Sign-in:** the computer's own login (macOS LocalAuthentication, Windows Hello). No online
+  account and no third-party identity service.
 - The llama-server child process listens on a random local port with a random key; only the hub
   talks to it.
 
@@ -226,7 +232,7 @@ Integration steps:
 - Installing the hub plus the default 4B pack takes **< 5 minutes** on a typical PC, with no terminal.
 - On a 12 GB PC with no GPU: the first token arrives in **≤ 3 s** for a short (~400-token)
   prompt, and a 200-token explanation finishes in **≤ 20 s** on the default 4B pack.
-- **Zero** prompts or outputs on disk, and **zero** non-local sockets (tested in CI).
+- **Zero** prompts or outputs on disk outside the encrypted conversation store, and **zero** non-local sockets other than user-started downloads and reports (tested in CI).
 - Invoice Analytics explanations pass the grounding check **≥ 95%** of the time on the chosen
   default pack.
 

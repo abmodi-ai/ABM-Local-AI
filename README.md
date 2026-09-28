@@ -13,9 +13,13 @@ every app that needs them, so apps don't each bundle their own. Nothing is sent 
   app once and can revoke it at any time.
 - **Models are packs.** Install the models you want as separate downloads. Each pack is
   checksum-verified and openly licensed.
-- **Private by design.** The hub listens only on this computer, stores no prompts, keeps apps
-  isolated from each other and sends no telemetry. The only internet use is a model download
-  you start yourself.
+- **Private by design.** The hub listens only on this computer, keeps apps isolated from each
+  other and collects nothing in the background. Sign-in uses the computer's own login (Touch ID
+  or Windows Hello). The internet is used only for model downloads you start and for crash or
+  problem reports you choose to send, after previewing exactly what's in them.
+- **ABM models.** Alongside open models, the library hosts ABM's own models for specific jobs,
+  starting with **ABM Attesta**, a knowledge chat assistant for validation and QA teams (not
+  for use in GxP environments). See [the Attesta plan](docs/attesta-plan.md).
 - **Guardrails outside the model.** The hub enforces a baseline policy for every app, and a
   shared harness library gives each app its domain checks. The model proposes; code decides.
 - **Standard interface.** It exposes an OpenAI-compatible API on the local machine, so tools you
