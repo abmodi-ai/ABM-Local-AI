@@ -39,7 +39,7 @@
       "size": 2244011552,
       "sha256": "e0406663965846ae22a403456eb826ccce5f450840491f71952f18a7cb78e7d5",
       "license": "Apache-2.0",
-      "thinking": false
+      "thinking": true
     },
     "gemma-4-e4b": {
       "repo": "unsloth/gemma-4-E4B-it-GGUF",
@@ -48,6 +48,24 @@
       "sha256": "85a896a047553e842f25297ee5b031d64ff30147d9c4af17b1e4b394cd1fab87",
       "license": "Apache-2.0",
       "thinking": false
+    },
+    "judge-gpt-oss-120b": {
+      "repo": "ggml-org/gpt-oss-120b-GGUF",
+      "file": "gpt-oss-120b-MXFP4.gguf",
+      "size": 63387346208,
+      "sha256": "582bd40f6886200101f4c4ed9f25f3fe80cc14c86e9e2b37746cd8904a0c622d",
+      "license": "Apache-2.0",
+      "thinking": true,
+      "note": "Evaluation grader only (neutral family). Needs ~64 GB RAM; never shipped."
+    },
+    "embed-qwen3-0.6b": {
+      "repo": "Qwen/Qwen3-Embedding-0.6B-GGUF",
+      "file": "Qwen3-Embedding-0.6B-Q8_0.gguf",
+      "size": 639150592,
+      "sha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439",
+      "license": "Apache-2.0",
+      "thinking": false,
+      "note": "Retriever for the evaluation knowledge pack (same file as the library's embedding pack)."
     }
   }
 }

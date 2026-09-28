@@ -37,6 +37,22 @@ Requirements:
 | Phi-4 mini (3.8B) | MIT | 2.3 GB | Older (Feb 2025) |
 | ✗ Llama 3.x, NVIDIA Nemotron | Custom licences | — | Excluded: the Llama licence requires "Llama" in derivative names and "Built with Llama"; NVIDIA's is a custom licence |
 
+**Pilot decision (2026-09-28): Qwen3.5 4B.** Result from the blind pilot bake-off
+(`docs/eval/pilot-2026-09-28.md`, 42 questions, grader gpt-oss-120b):
+- **Overall:** Qwen3.5 4B scored 76.6 against 69.1 for Granite 4.2 3B. On a paired per-question
+  comparison Qwen was 14 points ahead, 95% interval +6 to +22.
+- **Made-up claims:** answers containing one: 18% against 42%.
+- **Citations:** answers passing the citation check: 84% against 35%.
+- **Refusals:** unanswerable questions correctly refused: 56% against 31%.
+- **Speed:** Granite was faster (11.9 s against 16.7 s for a 200-token answer on CPU) and slightly
+  worse on correct facts (88% against 92%). Up to 13% of its answers looped, repeating the refusal
+  sentence until the token limit.
+
+Neither model passes the release gates yet (citation check ≥ 95%, made-up answers ≤ 5%). Closing
+that gap is what the fine-tune is for. Both models did clearly better with prompt wording A than B,
+so the training data should teach one fixed answer format. Confirm the choice on the expert's
+300-question set before training at scale.
+
 Speed and memory on a CPU: see `docs/spike-results.md` ("4B-class candidates"). The final
 choice is made by the **evaluation set (step 4.1)**, not by general benchmarks: the base model
 with retrieval, before any fine-tuning, that scores best on our questions.
