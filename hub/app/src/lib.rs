@@ -1,15 +1,19 @@
-//! ABM Local AI hub shell (M0 skeleton).
+//! ABM Local AI hub shell.
 //!
-//! Proves that the Tauri app can bundle llama-server as a resource folder and supervise it on
-//! Windows, macOS and Linux. It adds a tray icon, a status window, start/stop and a test prompt.
-//! Pairing, per-app keys and the policy API arrive in M1.
+//! The window is a model library: it shows what this computer has, which models run comfortably
+//! on it (the rest are greyed out with the minimum specs), downloads and verifies models, and
+//! lets the user pick the one that runs. Pairing, per-app keys and the policy API arrive in M1.
 //!
-//! The model comes from `ABM_MODEL` or from the first `.gguf` in `<data dir>/packs/`. The
-//! llama.cpp folder comes from `ABM_LLAMA_DIR` or the bundled `llama/` resource.
+//! Developer overrides: `ABM_MODEL` (a .gguf path to load instead of the active pack) and
+//! `ABM_LLAMA_DIR` (a llama.cpp folder instead of the bundled `llama/` resource).
 
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use abm_hub_core::catalog::{Catalog, Compatibility, Model};
+use abm_hub_core::hardware::Hardware;
+use abm_hub_core::packs::{Download, Packs, Settings};
 use abm_hub_core::{http, platform, LlamaConfig, State, Supervisor};
 use serde::Serialize;
 use serde_json::json;
@@ -21,19 +25,43 @@ struct Hub {
     supervisor: Supervisor,
     llama_dir: PathBuf,
     data_dir: PathBuf,
-    model: std::sync::Mutex<Option<PathBuf>>,
+    catalog: Arc<Catalog>,
+    packs: Packs,
+    hardware: Mutex<Hardware>,
+    settings: Mutex<Settings>,
+    /// What the supervisor was last asked to run: a catalog id, or a developer override path.
+    running: Mutex<Option<Running>>,
+}
+
+#[derive(Clone, Serialize)]
+struct Running {
+    id: Option<String>,
+    name: String,
+    kind: String,
 }
 
 #[derive(Serialize)]
-struct Status {
+struct ModelView {
+    #[serde(flatten)]
+    model: Model,
+    download_gb: f64,
+    compatibility: Compatibility,
+    installed: bool,
+    download: Option<Download>,
+    active: bool,
+    recommended: bool,
+}
+
+#[derive(Serialize)]
+struct Library {
     version: &'static str,
     platform: &'static str,
-    arch: &'static str,
     llama_build: Option<String>,
-    llama_dir: String,
-    data_dir: String,
-    model: Option<String>,
+    packs_dir: String,
+    hardware: Hardware,
+    models: Vec<ModelView>,
     server: State,
+    running: Option<Running>,
 }
 
 #[derive(Serialize)]
@@ -49,47 +77,115 @@ fn llama_build(dir: &Path) -> Option<String> {
     v["build"].as_str().map(str::to_owned)
 }
 
-fn find_model(data_dir: &Path) -> Option<PathBuf> {
-    if let Some(p) = std::env::var_os("ABM_MODEL") {
-        return Some(PathBuf::from(p));
-    }
-    let mut ggufs: Vec<PathBuf> = std::fs::read_dir(data_dir.join("packs"))
-        .ok()?
-        .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().is_some_and(|x| x.eq_ignore_ascii_case("gguf")))
-        .collect();
-    ggufs.sort();
-    ggufs.into_iter().next()
+fn config_for(hub: &Hub, m: &Model, path: PathBuf) -> LlamaConfig {
+    let mut cfg = LlamaConfig::new(&hub.llama_dir, path);
+    cfg.ctx_size = m.context;
+    cfg.extra_args = m.server_args.clone();
+    cfg
+}
+
+/// Load a pack: verify it, start llama-server and remember it as the active model.
+fn activate(hub: &Hub, id: &str) -> Result<(), String> {
+    let m = hub.catalog.get(id).ok_or("Unknown model")?.clone();
+    let path = hub.packs.verify_for_load(&m).map_err(|e| e.to_string())?;
+    hub.supervisor.start(config_for(hub, &m, path));
+    *hub.running.lock().unwrap() = Some(Running { id: Some(m.id.clone()), name: m.name.clone(), kind: m.kind.clone() });
+    let mut s = hub.settings.lock().unwrap();
+    s.active = Some(m.id.clone());
+    s.save(&hub.data_dir).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn hub_status(hub: tauri::State<'_, Hub>) -> Status {
-    Status {
+fn library(hub: tauri::State<'_, Hub>) -> Library {
+    let hardware = {
+        let mut hw = hub.hardware.lock().unwrap();
+        if std::env::var_os("ABM_SIMULATE_PC").is_none() {
+            hw.refresh_disk(&hub.data_dir);
+        }
+        hw.clone()
+    };
+    let active = hub.settings.lock().unwrap().active.clone();
+    let mut models: Vec<ModelView> = hub
+        .catalog
+        .models
+        .iter()
+        .map(|m| {
+            let installed = hub.packs.is_installed(m);
+            ModelView {
+                download_gb: m.download_gb(),
+                compatibility: m.compatibility(&hardware, installed),
+                installed,
+                download: hub.packs.download_status(&m.id),
+                active: active.as_deref() == Some(m.id.as_str()),
+                recommended: false,
+                model: m.clone(),
+            }
+        })
+        .collect();
+    // Recommend the most capable chat model that runs comfortably (the catalog is ordered by size).
+    if let Some(best) = models.iter_mut().rev().find(|v| v.model.kind == "chat" && v.compatibility.ok) {
+        best.recommended = true;
+    }
+    Library {
         version: env!("CARGO_PKG_VERSION"),
         platform: platform::NAME,
-        arch: std::env::consts::ARCH,
         llama_build: llama_build(&hub.llama_dir),
-        llama_dir: hub.llama_dir.display().to_string(),
-        data_dir: hub.data_dir.display().to_string(),
-        model: hub.model.lock().unwrap().as_ref().map(|p| p.display().to_string()),
+        packs_dir: hub.data_dir.join("packs").display().to_string(),
+        hardware,
+        models,
         server: hub.supervisor.state(),
+        running: hub.running.lock().unwrap().clone(),
     }
 }
 
 #[tauri::command]
-fn start_model(hub: tauri::State<'_, Hub>, path: Option<String>) -> Result<(), String> {
-    let mut model = hub.model.lock().unwrap();
-    if let Some(p) = path.filter(|p| !p.trim().is_empty()) {
-        *model = Some(PathBuf::from(p.trim()));
+fn download_model(hub: tauri::State<'_, Hub>, id: String) -> Result<(), String> {
+    let hw = hub.hardware.lock().unwrap().clone();
+    let m = hub.catalog.get(&id).ok_or("Unknown model")?;
+    if !m.compatibility(&hw, false).ok {
+        return Err(format!("{} can't run comfortably on this computer.", m.name));
     }
-    let m = model.clone().ok_or("No model selected. Enter a .gguf path or put one in the packs folder.")?;
-    hub.supervisor.start(LlamaConfig::new(&hub.llama_dir, m));
-    Ok(())
+    hub.packs.start_download(&id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn pause_download(hub: tauri::State<'_, Hub>, id: String) {
+    hub.packs.pause_download(&id);
+}
+
+#[tauri::command]
+fn remove_model(hub: tauri::State<'_, Hub>, id: String) -> Result<(), String> {
+    let running_this = hub.running.lock().unwrap().as_ref().and_then(|r| r.id.clone()).as_deref() == Some(id.as_str());
+    if running_this {
+        hub.supervisor.stop();
+        hub.supervisor.wait_settled(Duration::from_secs(15));
+        *hub.running.lock().unwrap() = None;
+    }
+    {
+        let mut s = hub.settings.lock().unwrap();
+        if s.active.as_deref() == Some(id.as_str()) {
+            s.active = None;
+            s.save(&hub.data_dir).map_err(|e| e.to_string())?;
+        }
+    }
+    hub.packs.remove(&id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn use_model(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    // Verification can re-hash a large file, so keep it off the UI thread.
+    tauri::async_runtime::spawn_blocking(move || activate(&app.state::<Hub>(), &id))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
 fn stop_model(hub: tauri::State<'_, Hub>) {
     hub.supervisor.stop();
+    *hub.running.lock().unwrap() = None;
+    let mut s = hub.settings.lock().unwrap();
+    s.active = None;
+    let _ = s.save(&hub.data_dir);
 }
 
 #[tauri::command]
@@ -99,8 +195,7 @@ async fn test_prompt(app: tauri::AppHandle, prompt: String) -> Result<PromptResu
         let body = json!({
             "messages": [{ "role": "user", "content": prompt }],
             "max_tokens": 200,
-            "temperature": 0,
-            "chat_template_kwargs": { "enable_thinking": false }
+            "temperature": 0
         });
         let bytes = serde_json::to_vec(&body).map_err(|e| e.to_string())?;
         let t0 = Instant::now();
@@ -108,7 +203,7 @@ async fn test_prompt(app: tauri::AppHandle, prompt: String) -> Result<PromptResu
             .map_err(|e| e.to_string())?;
         let total_ms = t0.elapsed().as_millis();
         if r.status != 200 {
-            return Err(format!("llama-server returned {}", r.status));
+            return Err(format!("The model returned an error ({}).", r.status));
         }
         let v = r.json().map_err(|e| e.to_string())?;
         Ok(PromptResult {
@@ -138,13 +233,28 @@ pub fn run() {
                 .map(PathBuf::from)
                 .unwrap_or_else(|| app.path().resource_dir().unwrap_or_default().join("llama"));
             let data_dir = platform::data_dir();
-            std::fs::create_dir_all(data_dir.join("packs"))?;
-            let model = find_model(&data_dir);
-            let supervisor = Supervisor::new();
-            if let Some(m) = &model {
-                supervisor.start(LlamaConfig::new(&llama_dir, m));
+            std::fs::create_dir_all(&data_dir)?;
+            let catalog = Arc::new(Catalog::builtin());
+            let packs = Packs::new(&data_dir, Arc::clone(&catalog));
+            let hub = Hub {
+                supervisor: Supervisor::new(),
+                hardware: Mutex::new(Hardware::detect(&data_dir).with_simulation()),
+                settings: Mutex::new(Settings::load(&data_dir)),
+                running: Mutex::new(None),
+                llama_dir,
+                data_dir,
+                catalog,
+                packs,
+            };
+            if let Some(p) = std::env::var_os("ABM_MODEL").map(PathBuf::from) {
+                let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                hub.supervisor.start(LlamaConfig::new(&hub.llama_dir, &p));
+                *hub.running.lock().unwrap() = Some(Running { id: None, name, kind: "chat".into() });
+            } else if let Some(id) = hub.settings.lock().unwrap().active.clone() {
+                // Restart the model the user picked last time. A failure shows in the window.
+                let _ = activate_later(&hub, &id);
             }
-            app.manage(Hub { supervisor, llama_dir, data_dir, model: std::sync::Mutex::new(model) });
+            app.manage(hub);
 
             // The window works fully without the tray: stock GNOME hides tray icons unless the
             // AppIndicator extension is installed.
@@ -164,7 +274,15 @@ pub fn run() {
             tray.build(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![hub_status, start_model, stop_model, test_prompt])
+        .invoke_handler(tauri::generate_handler![
+            library,
+            download_model,
+            pause_download,
+            remove_model,
+            use_model,
+            stop_model,
+            test_prompt
+        ])
         .build(tauri::generate_context!())
         .expect("error while building ABM Local AI");
 
@@ -176,4 +294,13 @@ pub fn run() {
             hub.supervisor.wait_settled(Duration::from_secs(15));
         }
     });
+}
+
+/// At startup, start the saved active pack if it is still installed. Verification is a quick
+/// size and date check unless the file changed since install.
+fn activate_later(hub: &Hub, id: &str) -> Result<(), String> {
+    match hub.catalog.get(id) {
+        Some(m) if hub.packs.is_installed(m) => activate(hub, id),
+        _ => Err("saved model is no longer installed".into()),
+    }
 }

@@ -1,11 +1,15 @@
 //! ABM Local AI hub core.
 //!
-//! M0 scope: supervise one llama-server child (loopback only, random port and key), tie its
-//! lifetime to the hub on every OS, and expose just enough to prove packaging and performance.
-//! The M1 API layer (pairing, per-app keys, policy) builds on top of this crate.
+//! Supervises one llama-server child (loopback only, random port and key) and ties its lifetime to
+//! the hub on every OS; holds the model library, the hardware check that decides which models a
+//! computer can run, and the verified pack downloader. The M1 API layer (pairing, per-app keys,
+//! policy) builds on top of this crate.
 
+pub mod catalog;
+pub mod hardware;
 pub mod http;
 pub mod llama;
+pub mod packs;
 pub mod platform;
 pub mod supervisor;
 

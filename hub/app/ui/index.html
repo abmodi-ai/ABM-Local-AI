@@ -7,37 +7,44 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header>
-      <h1>ABM Local AI</h1>
-      <span id="badge" class="badge">…</span>
+    <header class="top">
+      <div>
+        <h1>ABM Local AI</h1>
+        <p class="lede">Private AI that runs entirely on this computer.</p>
+      </div>
+      <div id="status" class="status" role="status" aria-live="polite">
+        <span class="dot"></span><span id="status-text">Starting…</span>
+      </div>
     </header>
 
-    <section>
-      <h2>Model</h2>
-      <p id="model" class="mono muted">No model selected</p>
-      <div class="row">
-        <input id="model-path" placeholder="Path to a .gguf file (or put one in the packs folder)" />
-        <button id="start">Start</button>
-        <button id="stop" class="secondary">Stop</button>
-      </div>
-      <p id="error" class="error" hidden></p>
+    <section aria-labelledby="pc-title">
+      <h2 id="pc-title">Your computer</h2>
+      <div id="pc" class="tiles"></div>
     </section>
 
-    <section>
-      <h2>Test prompt</h2>
-      <div class="row">
-        <input id="prompt" value="In two sentences, what is a duplicate invoice?" />
-        <button id="send">Send</button>
-      </div>
-      <pre id="answer" class="answer" hidden></pre>
-      <p id="timing" class="muted"></p>
+    <section id="try" class="try" hidden aria-labelledby="try-title">
+      <h2 id="try-title">Try it</h2>
+      <form id="try-form" class="row">
+        <input id="prompt" aria-label="Your question" value="In two sentences, what is a duplicate invoice?" />
+        <button id="send" type="submit">Ask</button>
+      </form>
+      <div id="answer" class="answer" hidden></div>
+      <p id="timing" class="muted small"></p>
     </section>
 
-    <section>
-      <h2>This computer</h2>
-      <dl id="facts"></dl>
-      <p class="muted">Nothing leaves this computer. The model server listens on 127.0.0.1 only, with a random key that only the hub knows.</p>
+    <section aria-labelledby="lib-title">
+      <div class="section-head">
+        <h2 id="lib-title">Model library</h2>
+        <p class="muted small">Download a model to use it. Greyed-out models need a more powerful computer. Point at one to see what it needs.</p>
+      </div>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div id="library" class="grid"></div>
     </section>
+
+    <footer class="muted small">
+      <span>Nothing leaves this computer. Models are downloaded only when you choose to, and every file is checked before it is used.</span>
+      <span id="about"></span>
+    </footer>
 
     <script src="main.js"></script>
   </body>

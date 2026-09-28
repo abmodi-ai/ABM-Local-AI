@@ -31,8 +31,10 @@ Status: **M0 spike**. See the [project brief](docs/project-brief.md), the
 ## Repository layout
 
 ```
-hub/core/        Rust: llama-server supervisor + per-OS platform layer, abm-hub-smoke test binary
-hub/app/         Tauri 2 shell: tray, status window; bundles llama.cpp from resources/llama/
+hub/core/        Rust: llama-server supervisor, per-OS platform layer, hardware check, model
+                 library rules, verified pack downloader; abm-hub-smoke test binary
+hub/app/         Tauri 2 shell: tray and the model-library window; bundles llama.cpp from resources/llama/
+packs/           catalog.json: the model library (licences, checksums, requirements)
 runtime/         llama.lock.json: the pinned llama.cpp build and its sha256 per target
 scripts/         fetch_llama.py, fetch_model.py (pinned, verified downloads); app_launch_check.py
 bench/           models.json (candidate packs) and bench.py (M0 speed/RAM benchmark)
@@ -51,7 +53,14 @@ python scripts/fetch_model.py ci-tiny    # 105 MB test model (add: small standar
 cargo run --manifest-path hub/Cargo.toml -p abm-hub-core --bin abm-hub-smoke -- \
   --llama-dir hub/app/resources/llama --model .cache/models/SmolLM2-135M-Instruct-Q4_K_M.gguf
 
-# Run the hub app with a model
+# Run the hub app (the model library; download and pick a model in the window)
+ABM_LLAMA_DIR=hub/app/resources/llama cargo run --manifest-path hub/Cargo.toml -p abm-local-ai
+
+# ...pretending to be a smaller computer, to see which models grey out and why
+ABM_SIMULATE_PC="ram=8,cores=4,gpu=0,disk=60" ABM_LLAMA_DIR=hub/app/resources/llama \
+  cargo run --manifest-path hub/Cargo.toml -p abm-local-ai
+
+# ...or skip the library and load a specific .gguf
 ABM_MODEL=.cache/models/SmolLM2-135M-Instruct-Q4_K_M.gguf \
   ABM_LLAMA_DIR=hub/app/resources/llama cargo run --manifest-path hub/Cargo.toml -p abm-local-ai
 

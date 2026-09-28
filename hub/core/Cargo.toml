@@ -14,6 +14,9 @@ path = "src/bin/smoke.rs"
 getrandom.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2 = "0.11"
+sysinfo = { version = "0.39", default-features = false, features = ["system", "disk"] }
+ureq = "3"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
